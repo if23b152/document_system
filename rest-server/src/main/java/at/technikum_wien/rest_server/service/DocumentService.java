@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DocumentService {
@@ -26,6 +28,24 @@ public class DocumentService {
         document.setStoragePath(storagePath);
         document.setUploadTimestamp(LocalDateTime.now());
         return documentRepository.save(document);
+    }
+
+    public List<Document> getAllDocuments() {
+        return documentRepository.findAll();
+    }
+
+    public Optional<Document> getDocumentById(Long id) {
+        return documentRepository.findById(id);
+    }
+
+    @Transactional
+    public Optional<Document> updateDocument(Long id, Document updatedData) {
+        return documentRepository.findById(id).map(existing -> {
+            existing.setFileName(updatedData.getFileName());
+            existing.setTags(updatedData.getTags());
+            existing.setSummary(updatedData.getSummary());
+            return documentRepository.save(existing);
+        });
     }
 }
 

@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
@@ -40,5 +42,31 @@ public class DocumentController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    // === GET ALL ===
+    @GetMapping
+    public ResponseEntity<List<Document>> getAllDocuments() {
+        List<Document> documents = documentService.getAllDocuments();
+        return ResponseEntity.ok(documents);
+    }
+
+    // === GET BY ID ===
+    @GetMapping("/{id}")
+    public ResponseEntity<Document> getDocumentById(@PathVariable Long id) {
+        return documentService.getDocumentById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // === UPDATE (PUT) ===
+    @PutMapping("/{id}")
+    public ResponseEntity<Document> updateDocument(
+            @PathVariable Long id,
+            @RequestBody Document updatedDocument
+    ) {
+        return documentService.updateDocument(id, updatedDocument)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }
