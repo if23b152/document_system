@@ -21,6 +21,7 @@ public class DocumentController {
         this.documentService = documentService;
     }
 
+    // === POST ===
     @PostMapping("/upload")
     public ResponseEntity<Document> uploadDocument(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {

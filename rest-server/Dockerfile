@@ -16,7 +16,7 @@ COPY src ./src
 # Build the project (skip tests for faster builds)
 RUN mvn clean package -DskipTests
 
-# 2️⃣ Run stage
+# Run stage
 FROM eclipse-temurin:21-jdk
 
 # Set working directory
