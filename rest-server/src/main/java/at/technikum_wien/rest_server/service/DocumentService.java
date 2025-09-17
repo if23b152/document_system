@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Service
 public class DocumentService {
@@ -19,14 +19,16 @@ public class DocumentService {
     }
 
     @Transactional
-    public void saveDocument(String fileName, byte[] fileData) {
+    public Document saveDocument(String fileName, long fileSize, String storagePath) {
         Document document = new Document();
         document.setFileName(fileName);
-        document.setFileData(fileData);
-        document.setUploadTimestamp(new Timestamp(System.currentTimeMillis()));
-        documentRepository.save(document);
+        document.setFileSize(fileSize);
+        document.setStoragePath(storagePath);
+        document.setUploadTimestamp(LocalDateTime.now());
+        return documentRepository.save(document);
     }
 }
+
 /*
 docker exec -it dms-postgres psql -U postgres
 After running this, you should see a prompt like:

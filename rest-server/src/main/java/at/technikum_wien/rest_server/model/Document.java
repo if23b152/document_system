@@ -3,11 +3,16 @@ package at.technikum_wien.rest_server.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
-@Getter @Setter @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
 @Table(name = "documents")
 public class Document {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,10 +20,20 @@ public class Document {
     @Column(nullable = false)
     private String fileName;
 
-    @Lob
     @Column(nullable = false)
-    private byte[] fileData;
+    private long fileSize;
 
-    @Column(name = "upload_timestamp", nullable = false)
-    private Timestamp uploadTimestamp;
+    @Column(nullable = false)
+    private LocalDateTime uploadTimestamp;
+
+    // Path or key in MinIO (Sprint 4)
+    @Column(nullable = false)
+    private String storagePath;
+
+    // Summary generated later (Sprint 5)
+    @Column(columnDefinition = "TEXT")
+    private String summary;
+
+    // Tags (Sprint 6, could also be separate entity)
+    private String tags;
 }
