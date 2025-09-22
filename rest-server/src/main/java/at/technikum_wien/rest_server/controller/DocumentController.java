@@ -62,10 +62,8 @@ public class DocumentController {
 
     // === UPDATE (PUT) ===
     @PutMapping("/{id}")
-    public ResponseEntity<Document> updateDocument(
-            @PathVariable Long id,
-            @RequestBody Document updatedDocument
-    ) {
+    public ResponseEntity<Document> updateDocument(@PathVariable Long id,
+                                                   @RequestBody Document updatedDocument) {
         return documentService.updateDocument(id, updatedDocument)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

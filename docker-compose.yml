@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     container_name: ui
     ports:
-      - "80:80"
+      - "8080:80"  # <-- map container port 80 to host port 8080 instead
     depends_on:
       - rest-server
 

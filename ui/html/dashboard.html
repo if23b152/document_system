@@ -3,180 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <title>Document Dashboard</title>
-    <style>
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-            background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(30,30,30,0.7) 100%);
-            display: flex;
-            flex-direction: column;
-        }
-        .glass {
-            background: rgba(255,255,255,0.1);
-            border-radius: 30px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, .35);
-            border: 1.5px solid rgba(255,0,0,0.5);
-            backdrop-filter: blur(6px);
-            padding: 32px 32px 8px 32px;
-            margin: 30px auto;
-            max-width: 650px;
-            width: 90%;
-            color: #fff;
-        }
-        h1 {
-            font-size: 2.6em;
-            font-weight: bold;
-            letter-spacing: 1px;
-            margin-bottom: 18px;
-            text-shadow: 0 2px 8px rgba(255,0,0,0.22);
-            border-bottom: 1.5px solid rgba(255,0,0,0.3);
-            border-radius: 12px;
-            padding-bottom: 10px;
-            background: rgba(255,0,0,0.05);
-            display: inline-block;
-        }
-        label, input[type="text"], input[type="file"] {
-            font-size: 1.12em;
-            margin-top: 10px;
-            color: #fff;
-            background: rgba(0,0,0,0.13);
-            border: none;
-            border-radius: 16px;
-            padding: 6px 18px;
-            outline: none;
-            box-shadow: 0 2px 7px rgba(255,0,0,0.07);
-            margin-bottom: 10px;
-        }
-        input[type="text"] {
-            border: 1.5px solid rgba(255,0,0,0.5);
-            width: 200px;
-        }
-        input[type="file"] {
-            border: 1.5px solid rgba(255,0,0,0.25);
-            width: 220px;
-        }
-        .red-btn {
-            color: #fff;
-            background: rgba(255,255,255,0.15);
-            border: 1.8px solid rgba(255,0,0,0.85);
-            border-radius: 50px;
-            padding: 8px 26px;
-            font-size: 1.12em;
-            font-weight: 500;
-            margin: 8px 6px;
-            cursor: pointer;
-            box-shadow: 0 3px 10px rgba(255,0,0,0.12);
-            transition: background 0.18s, transform 0.18s;
-        }
-        .red-btn:hover {
-            background: rgba(255,0,0,0.23);
-            transform: translateY(-2px) scale(1.05);
-        }
-        #docs {
-            margin-top: 25px;
-            padding-left: 0;
-        }
-        #docs li {
-            list-style: none;
-            margin-bottom: 22px;
-            padding: 18px 24px;
-            border-radius: 26px;
-            background: rgba(255,255,255,0.11);
-            border: 1.1px solid rgba(255,0,0,0.25);
-            box-shadow: 0 4px 15px rgba(255,0,0,0.07);
-            font-size: 1.11em;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #fff;
-        }
-        #docs li button {
-            margin-left: 18px;
-            flex-shrink: 0;
-        }
-        .team-names {
-            position: fixed;
-            right: 26px;
-            bottom: 19px;
-            background: rgba(255,255,255,0.13);
-            border-radius: 22px;
-            border: 1.3px solid rgba(255,0,0,0.45);
-            padding: 13px 22px;
-            font-size: 1.14em;
-            color: #fceded;
-            box-shadow: 0 3px 12px rgba(255,0,0,0.13);
-            letter-spacing: 0.8px;
-            font-weight: 480;
-            z-index: 99;
-            text-align: right;
-            user-select: none;
-        }
-    </style>
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="../css/dashboard.css">
 </head>
 <body>
-<div class="glass">
-    <h1>Document Dashboard</h1>
-    <form id="uploadForm">
-        <label for="fileInput">Upload Document:</label>
-        <input type="file" id="fileInput" name="file" accept="application/pdf" required>
-        <button type="submit" class="red-btn">Upload</button>
-    </form>
-    <input type="text" id="searchInput" placeholder="Search by file name">
-    <button onclick="searchDocs()" class="red-btn">Search</button>
-    <ul id="docs"></ul>
-</div>
-<div class="team-names">
-    Mikail&nbsp;&nbsp;|&nbsp;&nbsp;Nichita&nbsp;&nbsp;|&nbsp;&nbsp;Ibrahim
-</div>
-<script>
-    function fetchDocs(query = "") {
-        fetch('/api/documents')
-            .then(res => res.json())
-            .then(docs => {
-                const ul = document.getElementById('docs');
-                ul.innerHTML = "";
-                docs.filter(doc => doc.fileName.toLowerCase().includes(query.toLowerCase()))
-                    .forEach(doc => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                ${doc.fileName} (${doc.fileSize} bytes)
-                <button onclick="viewDetails(${doc.id})" class="red-btn">View Details</button>
-              `;
-                        ul.appendChild(li);
-                    });
-            });
-    }
-    function viewDetails(id) {
-        window.location.href = `detail.html?id=${id}`;
-    }
-    function searchDocs() {
-        const value = document.getElementById('searchInput').value;
-        fetchDocs(value);
-    }
-    document.getElementById('uploadForm').addEventListener('submit', function(e){
-        e.preventDefault();
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0];
-        if(!file) return alert("Choose a file!");
+<!-- Main container for the dashboard -->
+<main>
+    <header>
+        <h1>Document Dashboard</h1>
+    </header>
 
-        const form = new FormData();
-        form.append("file", file);
+    <!-- Upload form -->
+    <section aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="sr-only">Upload Document</h2>
+        <form id="uploadForm">
+            <label for="fileInput">Upload Document:</label>
+            <input type="file" id="fileInput" name="file" accept="application/pdf" required>
+            <button type="submit">Upload</button>
+        </form>
+    </section>
 
-        fetch('/api/documents/upload', {
-            method: 'POST',
-            body: form,
-        })
-            .then(r => {
-                if (r.ok) {
-                    alert("Upload success!");
-                    fetchDocs();
-                } else {
-                    alert("Upload failed!");
-                }
-            });
-    });
-    fetchDocs();
-</script>
+    <!-- Search section -->
+    <section aria-labelledby="search-heading">
+        <h2 id="search-heading" class="sr-only">Search Documents</h2>
+        <input type="text" id="searchInput" placeholder="Search by file name"
+               aria-label="Search documents by file name">
+        <button id="searchBtn">Search</button>
+    </section>
+
+    <!-- Document list -->
+    <section aria-labelledby="docs-heading">
+        <h2 id="docs-heading" class="sr-only">Document List</h2>
+        <ul id="docs">
+            <!-- JavaScript will populate this list -->
+        </ul>
+    </section>
+</main>
+
+<!-- JS script -->
+<script src="../js/dashboard.js"></script>
 </body>
 </html>
