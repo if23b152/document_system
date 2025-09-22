@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: dms-postgres
+    environment:
+      POSTGRES_DB: documentdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  rest-server:
+    build:
+      context: ./rest-server
+      dockerfile: Dockerfile
+    container_name: rest-server
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - postgres
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: ui
+    ports:
+      - "80:80"
+    depends_on:
+      - rest-server
+
+volumes:
+  pgdata:
