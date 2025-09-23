@@ -27,5 +27,15 @@ services:
     depends_on:
       - postgres
 
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: ui
+    ports:
+      - "8080:80"  # <-- map container port 80 to host port 8080 instead
+    depends_on:
+      - rest-server
+
 volumes:
   pgdata:

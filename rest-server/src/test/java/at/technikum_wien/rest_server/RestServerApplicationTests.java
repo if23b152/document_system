@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class RestServerApplicationTests {
 
+	// @Test or something like that
 	void contextLoads() {
 	}
 

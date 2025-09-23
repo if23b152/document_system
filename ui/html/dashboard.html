@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Dashboard</title>
+    <!-- Link to external CSS -->
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+<!-- Main container for the dashboard -->
+<main>
+    <header>
+        <h1>Document Dashboard</h1>
+    </header>
+
+    <!-- Upload form -->
+    <section aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="sr-only">Upload Document</h2>
+        <form id="uploadForm">
+            <label for="fileInput">Upload Document:</label>
+            <input type="file" id="fileInput" name="file" accept="application/pdf" required>
+            <button type="submit">Upload</button>
+        </form>
+    </section>
+
+    <!-- Search section -->
+    <section aria-labelledby="search-heading">
+        <h2 id="search-heading" class="sr-only">Search Documents</h2>
+        <input type="text" id="searchInput" placeholder="Search by file name"
+               aria-label="Search documents by file name">
+        <button id="searchBtn">Search</button>
+    </section>
+
+    <!-- Document list -->
+    <section aria-labelledby="docs-heading">
+        <h2 id="docs-heading" class="sr-only">Document List</h2>
+        <ul id="docs">
+            <!-- JavaScript will populate this list -->
+        </ul>
+    </section>
+</main>
+
+<!-- JS script -->
+<script src="../js/dashboard.js"></script>
+</body>
+</html>
