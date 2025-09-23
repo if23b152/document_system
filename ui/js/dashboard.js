@@ -18,17 +18,15 @@ window.addEventListener('DOMContentLoaded', async () => {
                 return fileName.toLowerCase().includes(query.toLowerCase());
             })
             .forEach(doc => {
-                const { fileName, fileSize, id } = doc; // Destructure to avoid IDE warnings
+                const { fileName, fileSize, id } = doc;
 
                 const li = document.createElement('li');
                 li.textContent = `${fileName} (${fileSize} bytes)`;
 
-                const btn = document.createElement('button');
-                btn.className = 'red-btn';
-                btn.textContent = 'View Details';
-                btn.addEventListener('click', () => viewDetails(id));
+                // Make the whole list item clickable
+                li.classList.add('clickable-doc');
+                li.addEventListener('click', () => viewDetails(id));
 
-                li.appendChild(btn);
                 ul.appendChild(li);
             });
     }

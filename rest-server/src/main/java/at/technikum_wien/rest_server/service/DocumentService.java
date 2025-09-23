@@ -47,6 +47,15 @@ public class DocumentService {
             return documentRepository.save(existing);
         });
     }
+
+    @Transactional
+    public boolean deleteDocument(Long id) {
+        if (documentRepository.existsById(id)) {
+            documentRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
 }
 
 /*

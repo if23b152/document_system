@@ -27,15 +27,17 @@ services:
     depends_on:
       - postgres
 
-  ui:
+  ui: # Define a service named "ui"
     build:
-      context: ./ui
-      dockerfile: Dockerfile
-    container_name: ui
+      context: ./ui # Look for Dockerfile in ./ui directory
+      dockerfile: Dockerfile # Use this Dockerfile to build the image
+    container_name: ui # Name the container "ui" for easier debugging
     ports:
-      - "8080:80"  # <-- map container port 80 to host port 8080 instead
+      - "8080:80" # Map host port 8080 -> container port 80
+      # So you open http://localhost:8080 in your browser
     depends_on:
-      - rest-server
+      - rest-server # Ensure "rest-server" is started before UI
+
 
 volumes:
   pgdata:

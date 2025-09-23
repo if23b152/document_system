@@ -75,6 +75,10 @@ body {
     background-color: #1d4ed8;
 }
 
+.back-btn {
+    margin-bottom: 20px; /* only affects the back button */
+}
+
 /* Accessibility: screen-reader-only */
 .sr-only {
     position: absolute;
@@ -96,4 +100,70 @@ body {
     .detail-block p {
         font-size: 0.95rem;
     }
+}
+
+/* Edit form */
+.edit-block {
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #f9fafb;
+}
+
+.edit-block h2 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+    color: #1f2937;
+}
+
+.edit-block label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.edit-block input,
+.edit-block textarea {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    font-size: 1rem;
+    width: 100%;
+    transition: border-color 0.2s ease-in-out;
+}
+
+.edit-block input:focus,
+.edit-block textarea:focus {
+    border-color: #2563eb;
+    outline: none;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background-color: #e5e7eb;
+    color: #111827;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #d1d5db;
+}
+
+.btn-danger {
+    background-color: #dc2626; /* red */
+    color: #fff;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
 }

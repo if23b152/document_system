@@ -150,3 +150,18 @@ button:hover {
         align-self: flex-end;
     }
 }
+
+/* Make document entries look clickable */
+#docs li.clickable-doc {
+    cursor: pointer;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    transition: background-color 0.2s ease-in-out;
+}
+
+#docs li.clickable-doc:hover {
+    background-color: #e0e7ff; /* light blue hover */
+}
