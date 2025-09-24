@@ -1,35 +1,39 @@
+// Extract the "id" parameter from the URL query string
 function getIdFromUrl() {
     const params = new URLSearchParams(window.location.search);
-    return params.get("id");
+    return params.get("id"); // returns the value of ?id=...
 }
 
+// Convert a timestamp into a human-readable date/time string
 function formatTimestamp(ts) {
     const date = new Date(ts);
-    return date.toLocaleString();
+    return date.toLocaleString(); // e.g. "9/23/2025, 12:34:56 PM"
 }
 
+// Store the original document so we can reset fields if needed
 let originalDoc = null;
 
-// Load and render document details
+// Load and display document details from the backend
 async function loadDetail() {
-    const id = getIdFromUrl();
+    const id = getIdFromUrl(); // get document ID from URL
     const detailsEl = document.getElementById("details");
-    detailsEl.innerHTML = "";
+    detailsEl.innerHTML = ""; // clear existing content
 
     try {
+        // Fetch document details from backend REST API
         const res = await fetch(`/api/documents/${id}`);
         if (!res.ok) {
             detailsEl.textContent = "Document was not found!";
             return;
         }
 
-        const doc = await res.json();
-        originalDoc = doc;
+        const doc = await res.json(); // parse JSON response
+        originalDoc = doc; // save for later use (resetting form)
 
-        // Destructure
+        // Extract fields from the document
         const { fileName, fileSize, uploadTimestamp, storagePath, summary, tags } = doc;
 
-        // Render static details
+        // Define which fields to render and how to label them
         const fields = [
             { label: "File Name", value: fileName },
             { label: "File Size", value: `${fileSize} bytes` },
@@ -39,6 +43,7 @@ async function loadDetail() {
             { label: "Tags", value: tags || "(none)" }
         ];
 
+        // Create a <p> element for each field and append to details container
         fields.forEach(item => {
             const p = document.createElement("p");
             const strong = document.createElement("b");
@@ -48,7 +53,7 @@ async function loadDetail() {
             detailsEl.appendChild(p);
         });
 
-        // Fill form with existing data
+        // Pre-fill the edit form with existing values
         document.getElementById("fileNameInput").value = fileName;
         document.getElementById("summaryInput").value = summary || "";
         document.getElementById("tagsInput").value = tags || "";
@@ -59,18 +64,19 @@ async function loadDetail() {
     }
 }
 
-// Handle form submission (PUT request)
+// Handle form submission to update a document (PUT request)
 async function handleUpdate(event) {
-    event.preventDefault();
+    event.preventDefault(); // stop form from refreshing the page
     const id = getIdFromUrl();
 
     let fileName = document.getElementById("fileNameInput").value.trim();
 
-    // Ensure the filename ends with .pdf
+    // Make sure the filename always ends with ".pdf"
     if (!fileName.toLowerCase().endsWith(".pdf")) {
         fileName += ".pdf";
     }
 
+    // Gather updated values from form
     const updatedDoc = {
         fileName,
         summary: document.getElementById("summaryInput").value,
@@ -78,6 +84,7 @@ async function handleUpdate(event) {
     };
 
     try {
+        // Send PUT request with updated document data
         const res = await fetch(`/api/documents/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -86,7 +93,7 @@ async function handleUpdate(event) {
 
         if (res.ok) {
             alert("Document updated successfully!");
-            await loadDetail(); // now properly awaited
+            await loadDetail(); // reload details to show changes
         } else {
             alert("Failed to update document.");
         }
@@ -96,7 +103,7 @@ async function handleUpdate(event) {
     }
 }
 
-// Reset form to original values
+// Reset the edit form back to the original document values
 function handleCancel() {
     if (!originalDoc) return;
     document.getElementById("fileNameInput").value = originalDoc.fileName;
@@ -104,18 +111,21 @@ function handleCancel() {
     document.getElementById("tagsInput").value = originalDoc.tags || "";
 }
 
-// Delete a document by ID
+// Delete the current document by ID
 async function handleDelete() {
     const id = getIdFromUrl();
 
+    // Confirm deletion with the user
     if (!confirm("Are you sure you want to delete this document? This cannot be undone.")) {
         return;
     }
 
     try {
+        // Send DELETE request to backend
         const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
         if (res.ok) {
             alert("Document deleted successfully.");
+            // Redirect back to dashboard after delete
             window.location.href = "dashboard.html";
         } else if (res.status === 404) {
             alert("Document not found.");
@@ -128,8 +138,10 @@ async function handleDelete() {
     }
 }
 
+// Wait for DOM to load, then initialize page
 document.addEventListener("DOMContentLoaded", async () => {
-    await loadDetail();
+    await loadDetail(); // load document details on page load
+    // Attach event listeners to form buttons
     document.getElementById("editForm").addEventListener("submit", handleUpdate);
     document.getElementById("cancelBtn").addEventListener("click", handleCancel);
     document.getElementById("deleteBtn").addEventListener("click", handleDelete);
