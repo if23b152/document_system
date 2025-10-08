@@ -3,6 +3,9 @@ package at.technikum_wien.rest_server.service;
 import at.technikum_wien.rest_server.messaging.producer.DocumentMessageProducer;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +17,7 @@ import java.util.Optional;
 @Service
 public class DocumentService {
 
+    private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
 
     private final DocumentRepository documentRepository;
     private final DocumentMessageProducer messageProducer; // NEW: Inject the producer
@@ -42,14 +46,21 @@ public class DocumentService {
         document.setFileSize(fileSize);
         document.setStoragePath(storagePath);
         document.setUploadTimestamp(LocalDateTime.now());
-        // Initial state flags for the worker processes
         document.setOcrProcessed(false);
         document.setGenAiSummarized(false);
 
         Document savedDocument = documentRepository.save(document);
 
-        // 2. Trigger the asynchronous worker
-        messageProducer.sendOcrProcessingRequest(savedDocument.getId());
+        // 2. Trigger the asynchronous worker with exception handling
+        try {
+            messageProducer.sendOcrProcessingRequest(savedDocument.getId());
+        } catch (AmqpException e) {
+            // Failure/exception-handling implemented (AmqpException is the layer-specific exception)
+            // CRITICAL LOGGING: Document is saved, but async processing failed to start.
+            log.error("===== [SERVICE ERROR] Document ID {} was saved but failed to send to RabbitMQ. Processing requires manual restart! Error: {} =====",
+                    savedDocument.getId(), e.getMessage(), e);
+            // DO NOT re-throw: Allow the successful database transaction to commit.
+        }
 
         return savedDocument;
     }
