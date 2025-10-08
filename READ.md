@@ -48,3 +48,29 @@ Cleaning up branches
 After merging:
 git branch -d sprint2          # delete locally (safe, refuses if unmerged)
 git push origin --delete sprint2   # delete remote branch
+
+How do add a project with pom.xml file as a module:
+Open Project Structure: Go to File → Project Structure (or press Ctrl+Alt+Shift+S on Windows/Linux or ⌘ + ; on macOS).
+
+Navigate to Modules: In the left sidebar, select Modules.
+
+Add New Module: Click the + (Add) button above the modules list.
+
+Select Import Module: Choose the option Import Module (or New Module → Import Module from existing sources depending on 
+your IntelliJ version).
+
+Locate the pom.xml: Navigate to your new worker-service folder and select its pom.xml file.
+
+Confirm: Click OK or Next. IntelliJ will recognize the worker-service folder as a separate, self-contained Maven module.
+
+how to add project with no pom.xml file as a module (untested):
+Open Project Structure: Go to File → Project Structure (Ctrl+Alt+Shift+S).
+
+Navigate to Modules: Select your main document-service (or the top-level content root).
+
+Add Content Root: Go to the Sources tab and check the list of content roots. If the ui folder is already inside your 
+root DocumentManagementSystem/ folder, it is likely already part of the content root.
+
+Mark as Resource Root (Optional): You can right-click the ui folder in the Project Explorer and mark it as a "Resource 
+Root" or "Sources Root" depending on what you're doing with it, but for simple static files, just having it visible is 
+often enough.

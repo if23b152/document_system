@@ -38,6 +38,5 @@ services:
     depends_on:
       - rest-server # Ensure "rest-server" is started before UI
 
-
 volumes:
   pgdata:
