@@ -47,7 +47,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Add event listener for the upload form submission
-    document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+    document.getElementById('uploadForm').addEventListener('submit',
+        async function (e) {
         e.preventDefault(); // Prevent the page from reloading when submitting the form
 
         // Get the uploaded file from the file input

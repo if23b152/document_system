@@ -36,4 +36,7 @@ public class Document {
 
     // Tags (Sprint 6, could also be separate entity)
     private String tags;
+
+    private Boolean ocrProcessed;
+    private Boolean genAiSummarized;
 }

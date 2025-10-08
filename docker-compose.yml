@@ -1,6 +1,9 @@
 version: "3.9"
 
 services:
+  # -----------------------------------------------------------------
+  # 1. Database Service
+  # -----------------------------------------------------------------
   postgres:
     image: postgres:15
     container_name: dms-postgres
@@ -13,6 +16,29 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  # -----------------------------------------------------------------
+  # 2. Messaging Broker Service (NEW for Sprint 3)
+  # -----------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3-management # Image includes the management UI
+    container_name: dms-rabbitmq
+    hostname: rabbitmq # Important for internal host resolution
+    ports:
+      - "5672:5672"   # Standard RabbitMQ port for AMQP connections
+      - "15672:15672" # (NOT 9093!) Management console port (access at http://localhost:15672)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    # Ensures RabbitMQ starts before any service that relies on it
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -----------------------------------------------------------------
+  # 3. REST Server (PRODUCER)
+  # -----------------------------------------------------------------
   rest-server:
     build:
       context: ./rest-server
@@ -24,8 +50,40 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
+      # NEW: RabbitMQ connection details for the producer
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
     depends_on:
-      - postgres
+      postgres:
+        condition: service_started
+      rabbitmq: # NEW: Ensure the broker is up before the REST server tries to send messages
+        condition: service_healthy
+
+  # -----------------------------------------------------------------
+  # 4. Worker Service (CONSUMER) - NEW for Sprint 3
+  # -----------------------------------------------------------------
+  worker-service:
+    build:
+      context: ./worker-service # Points to the new worker module folder
+      dockerfile: Dockerfile
+    container_name: worker-service
+    # Worker services usually don't need exposed ports, unless for monitoring/debugging (e.g., 8081 -> 8082)
+    # If you use port 8081 for rest-server, change the worker's internal port to 8082
+    ports:
+      - "8082:8082" # Maps host 8082 to container's internal 8082
+    environment:
+      # NEW: RabbitMQ connection details for the consumer
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      # Also need DB settings for future sprints (updating document status)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      rabbitmq: # NEW: Worker must wait for RabbitMQ to be ready
+        condition: service_healthy
+      postgres:
+        condition: service_started
 
   ui: # Define a service named "ui"
     build:

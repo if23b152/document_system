@@ -1,5 +1,6 @@
 package at.technikum_wien.rest_server.service;
 
+import at.technikum_wien.rest_server.messaging.producer.DocumentMessageProducer;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,21 +14,44 @@ import java.util.Optional;
 @Service
 public class DocumentService {
 
+
     private final DocumentRepository documentRepository;
+    private final DocumentMessageProducer messageProducer; // NEW: Inject the producer
 
     @Autowired
-    public DocumentService(DocumentRepository documentRepository) {
+    public DocumentService(DocumentRepository documentRepository,
+                           DocumentMessageProducer messageProducer) { // NEW: Constructor injection
         this.documentRepository = documentRepository;
+        this.messageProducer = messageProducer;
     }
 
+    /**
+     * Saves a new document record and then sends a message to the queue
+     * to trigger the OCR worker.
+     * * @param fileName The name of the file.
+     * @param fileSize The size of the file in bytes.
+     * @param storagePath The path where the file is stored (e.g., MinIO path).
+     * @return The saved Document entity.
+     */
     @Transactional
     public Document saveDocument(String fileName, long fileSize, String storagePath) {
         Document document = new Document();
+
+        // 1. Persist the document metadata
         document.setFileName(fileName);
         document.setFileSize(fileSize);
         document.setStoragePath(storagePath);
         document.setUploadTimestamp(LocalDateTime.now());
-        return documentRepository.save(document);
+        // Initial state flags for the worker processes
+        document.setOcrProcessed(false);
+        document.setGenAiSummarized(false);
+
+        Document savedDocument = documentRepository.save(document);
+
+        // 2. Trigger the asynchronous worker
+        messageProducer.sendOcrProcessingRequest(savedDocument.getId());
+
+        return savedDocument;
     }
 
     public List<Document> getAllDocuments() {
