@@ -1,52 +1,56 @@
 package at.technikum_wien.worker_service.messaging.listener;
 
 import at.technikum_wien.worker_service.messaging.config.RabbitMQConfig;
+import at.technikum_wien.worker_service.model.OcrRequestMessage;
+
+import at.technikum_wien.worker_service.model.OcrResult;
+import at.technikum_wien.worker_service.service.MinioService;
+import at.technikum_wien.worker_service.service.OcrService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Message listener for the OCR processing queue.
- * This component consumes messages published by the document-service.
- */
+import java.io.InputStream;
+
 @Component
 public class OcrMessageListener {
 
     private static final Logger log = LoggerFactory.getLogger(OcrMessageListener.class);
 
-    /**
-     * Listens for messages on the defined OCR queue.
-     * The message payload is expected to be the ID of the document needing OCR processing.
-     * * @param documentId The ID of the document received as a String payload.
-     */
+    private final MinioService minioService;
+    private final OcrService ocrService;
+
+    public OcrMessageListener(MinioService minioService, OcrService ocrService) {
+        this.minioService = minioService;
+        this.ocrService = ocrService;
+    }
+
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
-    public void handleOcrRequest(String documentId) {
-        // Use a try-catch to ensure that if processing fails, RabbitMQ receives an acknowledgement
-        // and does not redeliver the message infinitely.
+    public void handleOcrRequest(OcrRequestMessage message) {
         try {
-            // --- SPRINT 3 REQUIREMENT: Simply log the receipt of the message (SUCCESS LOGGING) ---
-            log.info("--- [LISTENER SUCCESS] Received OCR request for Document ID: {}. Starting worker processing. ---",
-                    documentId);
+            log.info("--- [LISTENER SUCCESS] Received OCR request: {} ---", message);
 
-            // In SPRINT 4, the logic here will change to:
-            // 1. Fetch document from DB using the ID.
-            // 2. Call ocrProcessingService.process(document).
+            // 1. Download PDF from MinIO
+            InputStream pdfStream = minioService.downloadFile(message.getMinioObjectKey());
 
-            // Placeholder for future SPRINT 4 logic (e.g., throwing an error if ID is invalid)
-            // if (documentId.length() < 1) {
-            //     throw new IllegalArgumentException("Received empty document ID.");
-            // }
+            // 2. Perform OCR
+            OcrResult result = ocrService.performOcr(message.getDocumentId(), pdfStream);
+
+            // 3. Log OCR result (later: update DB or forward to GenAI worker)
+            if (result.isSuccess()) {
+                log.info("--- [OCR SUCCESS] Document ID {} text length: {} ---",
+                        result.getDocumentId(),
+                        result.getText().length());
+            } else {
+                log.error("--- [OCR FAILURE] Document ID {} error: {} ---",
+                        result.getDocumentId(),
+                        result.getError());
+            }
 
         } catch (Exception e) {
-            // Failure/exception-handling integrated (catching any unexpected runtime error)
-            // CRITICAL LOGGING: This failure must be logged for manual intervention.
-            log.error("--- [LISTENER ERROR] Failed to process OCR request for Document ID: {}. Message will NOT be " +
-                            "re-queued. Error: {} ---",
-                    documentId, e.getMessage(), e);
-
-            // DO NOT re-throw: By returning normally, Spring AMQP acknowledges the message,
-            // even though processing failed, preventing infinite redelivery.
+            log.error("--- [LISTENER ERROR] Failed to process OCR request: {}. Error: {} ---",
+                    message, e.getMessage(), e);
         }
     }
 }

@@ -69,7 +69,21 @@
 			<artifactId>spring-rabbit-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-	</dependencies>
+
+        <!-- Place this inside the <dependencies> block of your pom.xml -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <!-- Use the latest stable version for your project. As of now, this is a common version. -->
+            <version>8.5.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.4.0</version> <!-- Use the latest stable version -->
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>
