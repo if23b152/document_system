@@ -2,7 +2,6 @@ package at.technikum_wien.rest_server.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter
@@ -26,17 +25,17 @@ public class Document {
     @Column(nullable = false)
     private LocalDateTime uploadTimestamp;
 
-    // Path or key in MinIO (Sprint 4)
-    @Column(nullable = false)
-    private String storagePath;
+    // MinIO object key (e.g. "documents/uuid-filename.pdf")
+    @Column(name = "minio_object_key", nullable = false)
+    private String minioObjectKey;
 
     // Summary generated later (Sprint 5)
     @Column(columnDefinition = "TEXT")
     private String summary;
 
-    // Tags (Sprint 6, could also be separate entity)
+    // Tags (Sprint 6)
     private String tags;
 
-    private Boolean ocrProcessed;
-    private Boolean genAiSummarized;
+    private Boolean ocrProcessed = false;
+    private Boolean genAiSummarized = false;
 }

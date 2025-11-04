@@ -9,57 +9,75 @@ import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handles persistence of document metadata and triggering the OCR workflow.
+ */
 @Service
 public class DocumentService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentService.class);
 
     private final DocumentRepository documentRepository;
-    private final DocumentMessageProducer messageProducer; // NEW: Inject the producer
+    private final DocumentMessageProducer messageProducer;
+    private final MinioService minioService; // for MinIO file upload
 
     @Autowired
     public DocumentService(DocumentRepository documentRepository,
-                           DocumentMessageProducer messageProducer) { // NEW: Constructor injection
+                           DocumentMessageProducer messageProducer,
+                           MinioService minioService) { // include MinioService
         this.documentRepository = documentRepository;
         this.messageProducer = messageProducer;
+        this.minioService = minioService;
     }
 
     /**
-     * Saves a new document record and then sends a message to the queue
-     * to trigger the OCR worker.
-     * * @param fileName The name of the file.
+     * Uploads a file to MinIO and returns its object key.
+     */
+    public String uploadToMinio(MultipartFile file) {
+        log.info("Uploading file '{}' to MinIO...", file.getOriginalFilename());
+        String objectKey = minioService.uploadDocument(file);
+        log.info("File uploaded to MinIO with object key: {}", objectKey);
+        return objectKey;
+    }
+
+    /**
+     * Saves a new document record and triggers the OCR worker asynchronously.
+     *
+     * @param fileName The name of the file.
      * @param fileSize The size of the file in bytes.
-     * @param storagePath The path where the file is stored (e.g., MinIO path).
+     * @param objectKey The MinIO object key.
      * @return The saved Document entity.
      */
     @Transactional
-    public Document saveDocument(String fileName, long fileSize, String storagePath) {
+    public Document saveDocument(String fileName, long fileSize, String objectKey) {
         Document document = new Document();
-
-        // 1. Persist the document metadata
         document.setFileName(fileName);
         document.setFileSize(fileSize);
-        document.setStoragePath(storagePath);
+        document.setMinioObjectKey(objectKey); // use object key instead of storagePath
         document.setUploadTimestamp(LocalDateTime.now());
         document.setOcrProcessed(false);
         document.setGenAiSummarized(false);
 
         Document savedDocument = documentRepository.save(document);
 
-        // 2. Trigger the asynchronous worker with exception handling
+        // Send message to OCR queue (includes objectKey)
         try {
-            messageProducer.sendOcrProcessingRequest(savedDocument.getId());
+            messageProducer.sendOcrProcessingRequest(
+                    savedDocument.getId(),
+                    savedDocument.getFileName(),
+                    savedDocument.getMinioObjectKey()
+            );
+            log.info("OCR processing request sent for document ID {}", savedDocument.getId());
         } catch (AmqpException e) {
-            // Failure/exception-handling implemented (AmqpException is the layer-specific exception)
-            // CRITICAL LOGGING: Document is saved, but async processing failed to start.
-            log.error("===== [SERVICE ERROR] Document ID {} was saved but failed to send to RabbitMQ. Processing requires manual restart! Error: {} =====",
+            log.error("[RabbitMQ ERROR] Document ID {} saved but failed to send OCR message. Error: {}",
                     savedDocument.getId(), e.getMessage(), e);
-            // DO NOT re-throw: Allow the successful database transaction to commit.
+            // Do not rethrow to avoid rollback of DB transaction
         }
 
         return savedDocument;

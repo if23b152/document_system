@@ -1,6 +1,7 @@
 package at.technikum_wien.rest_server.messaging.producer;
 
 import at.technikum_wien.rest_server.messaging.config.RabbitMQConfig;
+import at.technikum_wien.rest_server.model.OcrRequestMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
@@ -9,8 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Service responsible for publishing messages to the RabbitMQ exchange.
- * This producer is triggered after a document is successfully saved to the database.
+ * Publishes messages to RabbitMQ after a document is saved.
  */
 @Service
 public class DocumentMessageProducer {
@@ -25,33 +25,31 @@ public class DocumentMessageProducer {
     }
 
     /**
-     * Publishes the document ID to the OCR queue for asynchronous processing.
-     * The worker service will consume this message and start the OCR process.
+     * Publishes a message with document metadata to the OCR queue for asynchronous processing.
      *
-     * @param documentId The ID of the newly saved document.
+     * @param documentId The database ID of the document.
+     * @param fileName The original filename.
+     * @param minioObjectKey The MinIO object key (path in bucket).
      */
-    public void sendOcrProcessingRequest(Long documentId) throws AmqpException {
-        // Convert the Long ID to a String for the message payload
-        String messagePayload = String.valueOf(documentId);
+    public void sendOcrProcessingRequest(Long documentId, String fileName, String minioObjectKey) throws AmqpException {
+        OcrRequestMessage message = new OcrRequestMessage(documentId, fileName, minioObjectKey);
 
         try {
-            // Send the message to the defined exchange with the specific routing key
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.EXCHANGE_NAME,
                     RabbitMQConfig.ROUTING_KEY,
-                    messagePayload
+                    message
             );
 
-            // Logging in remarkable/critical positions integrated (SUCCESS)
-            log.info("===== [PRODUCER SUCCESS] Message sent successfully. Exchange: {}, Key: {}, Payload: {}=====",
-                    RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, messagePayload);
+            log.info("""
+                    [PRODUCER SUCCESS] OCR message sent:
+                    Exchange: {}
+                    RoutingKey: {}
+                    Payload: {}
+                    """, RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
 
         } catch (AmqpException e) {
-            // Failure/exception-handling with layer-specific exceptions (AmqpException is Spring AMQP layer-specific)
-            log.error("===== [PRODUCER FAILURE] Failed to send OCR message for document ID: {}. Error: {} =====",
-                    documentId, e.getMessage(), e);
-
-            // Re-throw the layer-specific exception to be handled by the DocumentService
+            log.error("[PRODUCER FAILURE] Failed to send OCR message for document ID {}: {}", documentId, e.getMessage(), e);
             throw e;
         }
     }

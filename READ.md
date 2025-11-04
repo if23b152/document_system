@@ -1,5 +1,33 @@
 link: http://localhost:8080/
 
+If you want to run the project then start the docker desktop app, which automatically starts the docker engine.
+Then open the terminal in IntelliJ and run the following command:
+docker-compose up --build
+Wait until the build is finished.
+Then go to a browser of your choice, for example FireFox, and open the link: http://localhost:8080/
+This is the frontend of our project and once you are done using our Document Management System application, go back to
+the IntelliJ terminal and run the following command:
+docker-compose down
+
+/document-management-system  <-- main project folder (git repo root)
+│
+├── rest-server/             <-- Spring Boot project (handles API, DB, queues)
+│
+├── ui/                      <-- frontend project (HTML/JS/React/Angular + served via nginx)
+│
+├── ocr-worker/              <-- Spring Boot (or Java) service for OCR
+│
+├── genai-worker/            <-- Spring Boot (or Java) service for calling Gemini and summarizing
+│
+├── indexing-worker/         <-- Spring Boot (or Java) service for pushing text to ElasticSearch
+│
+├── batch-processor/         <-- Spring Boot (or Java) service for scheduled XML processing
+│
+├── docker-compose.yml       <-- starts all services (REST, workers, db, queues, elastic, etc.)
+│
+└── README.md                <-- instructions
+
+
 Link to GitHub repository:
 https://github.com/if23b196/Document-Management-System.git
 

@@ -26,7 +26,8 @@ public class OcrMessageListener {
         // and does not redeliver the message infinitely.
         try {
             // --- SPRINT 3 REQUIREMENT: Simply log the receipt of the message (SUCCESS LOGGING) ---
-            log.info("--- [LISTENER SUCCESS] Received OCR request for Document ID: {}. Starting worker processing. ---", documentId);
+            log.info("--- [LISTENER SUCCESS] Received OCR request for Document ID: {}. Starting worker processing. ---",
+                    documentId);
 
             // In SPRINT 4, the logic here will change to:
             // 1. Fetch document from DB using the ID.
@@ -40,7 +41,8 @@ public class OcrMessageListener {
         } catch (Exception e) {
             // Failure/exception-handling integrated (catching any unexpected runtime error)
             // CRITICAL LOGGING: This failure must be logged for manual intervention.
-            log.error("--- [LISTENER ERROR] Failed to process OCR request for Document ID: {}. Message will NOT be re-queued. Error: {} ---",
+            log.error("--- [LISTENER ERROR] Failed to process OCR request for Document ID: {}. Message will NOT be " +
+                            "re-queued. Error: {} ---",
                     documentId, e.getMessage(), e);
 
             // DO NOT re-throw: By returning normally, Spring AMQP acknowledges the message,

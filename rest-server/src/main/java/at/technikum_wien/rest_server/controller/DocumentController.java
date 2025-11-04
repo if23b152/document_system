@@ -33,14 +33,19 @@ public class DocumentController {
         }
 
         try {
-            // For now just store path = fileName; will later be replaced by MinIO logic
+            // Upload to MinIO and get object key
+            String objectKey = documentService.uploadToMinio(file);
+
+            // Save metadata in DB (includes MinIO object key)
             Document saved = documentService.saveDocument(
                     file.getOriginalFilename(),
                     file.getSize(),
-                    file.getOriginalFilename()
+                    objectKey
             );
+
             return ResponseEntity.status(HttpStatus.CREATED).body(saved);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
