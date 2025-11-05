@@ -16,14 +16,12 @@ let originalDoc = null;
 // Load and display document details from the backend
 async function loadDetail() {
     const id = getIdFromUrl(); // get document ID from URL
-    const detailsEl = document.getElementById("details");
-    detailsEl.innerHTML = ""; // clear existing content
 
     try {
         // Fetch document details from backend REST API
         const res = await fetch(`/api/documents/${id}`);
         if (!res.ok) {
-            detailsEl.textContent = "Document was not found!";
+            alert("Document was not found!");
             return;
         }
 
@@ -31,36 +29,23 @@ async function loadDetail() {
         originalDoc = doc; // save for later use (resetting form)
 
         // Extract fields from the document
-        const { fileName, fileSize, uploadTimestamp, storagePath, summary, tags } = doc;
+        const { fileName, fileSize, uploadTimestamp, summary, tags } = doc;
 
-        // Define which fields to render and how to label them
-        const fields = [
-            { label: "File Name", value: fileName },
-            { label: "File Size", value: `${fileSize} bytes` },
-            { label: "Upload Timestamp", value: formatTimestamp(uploadTimestamp) },
-            { label: "Storage Path", value: storagePath },
-            { label: "Summary", value: summary || "(not yet created)" },
-            { label: "Tags", value: tags || "(none)" }
-        ];
-
-        // Create a <p> element for each field and append to details container
-        fields.forEach(item => {
-            const p = document.createElement("p");
-            const strong = document.createElement("b");
-            strong.textContent = item.label + ": ";
-            p.appendChild(strong);
-            p.appendChild(document.createTextNode(item.value));
-            detailsEl.appendChild(p);
-        });
+        // Populate read-only inputs in the details column
+        document.getElementById("detailFileName").value = fileName || "";
+        document.getElementById("detailFileSize").value = fileSize ? `${fileSize} bytes` : "";
+        document.getElementById("detailUploadedOn").value = uploadTimestamp ? formatTimestamp(uploadTimestamp) : "";
+        document.getElementById("detailTags").value = tags || "(none)";
+        document.getElementById("detailSummary").value = summary || "(not yet created)";
 
         // Pre-fill the edit form with existing values
-        document.getElementById("fileNameInput").value = fileName;
+        document.getElementById("fileNameInput").value = fileName || "";
         document.getElementById("summaryInput").value = summary || "";
         document.getElementById("tagsInput").value = tags || "";
 
     } catch (err) {
         console.error("Error loading document:", err);
-        detailsEl.textContent = "Document was not found!";
+        alert("Document was not found!");
     }
 }
 

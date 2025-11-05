@@ -16,14 +16,14 @@ window.addEventListener('DOMContentLoaded', async () => {
         docs
             .filter(doc => {
                 // Extract fileName from the current document object
-                const { fileName } = doc;
+                const {fileName} = doc;
                 // Return only docs whose fileName contains the query string
                 return fileName.toLowerCase().includes(query.toLowerCase());
             })
             // For each document, create a <li> element and append it to the <ul>
             .forEach(doc => {
                 // Destructure properties from the document object
-                const { fileName, fileSize, id } = doc;
+                const {fileName, fileSize, id} = doc;
 
                 // Create a new list item
                 const li = document.createElement('li');
@@ -49,37 +49,38 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Add event listener for the upload form submission
     document.getElementById('uploadForm').addEventListener('submit',
         async function (e) {
-        e.preventDefault(); // Prevent the page from reloading when submitting the form
+            e.preventDefault(); // Prevent the page from reloading when submitting the form
 
-        // Get the uploaded file from the file input
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0]; // First (and only) selected file
-        if (!file) return alert("Choose a file!"); // Stop if no file was selected
+            // Get the uploaded file from the file input
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0]; // First (and only) selected file
+            if (!file) return alert("Choose a file!"); // Stop if no file was selected
 
-        // Use FormData to send the file in a POST request
-        const form = new FormData();
-        form.append("file", file);
+            // Use FormData to send the file in a POST request
+            const form = new FormData();
+            form.append("file", file);
 
-        try {
-            // Send file to the backend API for upload
-            const res = await fetch('/api/documents/upload', { method: 'POST', body: form });
-            if (res.ok) {
-                alert("Upload success!"); // Notify success
-                await fetchDocs(); // Refresh the list to include the new document
-            } else {
-                alert("Upload failed!"); // Notify failure
+            try {
+                // Send file to the backend API for upload
+                const res = await fetch('/api/documents/upload', {method: 'POST', body: form});
+                if (res.ok) {
+                    alert("Upload success!"); // Notify success
+                    await fetchDocs(); // Refresh the list to include the new document
+                } else {
+                    alert("Upload failed!"); // Notify failure
+                }
+            } catch (error) {
+                // Handle network or server errors
+                console.error("Upload error:", error);
+                alert("Upload failed due to network error.");
             }
-        } catch (error) {
-            // Handle network or server errors
-            console.error("Upload error:", error);
-            alert("Upload failed due to network error.");
-        }
-    });
+        });
 
-    // Add an event listener to the search button
-    // When clicked, it filters the documents by the value typed in the search input
-    document.getElementById('searchBtn').addEventListener('click', async () => {
-        await fetchDocs(document.getElementById('searchInput').value);
+    // Search form submit handler
+    document.getElementById('searchForm').addEventListener('submit', async function (e) {
+        e.preventDefault(); // Prevent page reload
+        const query = document.getElementById('searchInput').value;
+        await fetchDocs(query); // Call fetchDocs with query
     });
 
     // Perform an initial fetch of documents when the page loads
