@@ -53,6 +53,7 @@ public class OcrService {
             result.setText(extractedText);
             result.setSuccess(true);
 
+            // why is this not shown in the output in the terminal
             log.info("OCR successfully completed for document ID {}", documentId);
 
         } catch (TesseractException e) {

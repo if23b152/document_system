@@ -13,7 +13,6 @@ COPY pom.xml .
 
 # Copy the rest of the source code
 COPY src src
-
 COPY mvnw ./
 COPY .mvn .mvn
 
@@ -22,23 +21,36 @@ COPY .mvn .mvn
 # test environment (like a running database connection).
 RUN ./mvnw clean install -DskipTests
 
-# --- Stage 2: Runtime Stage (runner) ---
-# Use a minimal JRE image (Java Runtime Environment) for the final production container.
-# This significantly reduces the image size and attack surface.
 FROM eclipse-temurin:21-jre-jammy
 
-# Set the working directory
 WORKDIR /app
 
-# Expose the internal container port (8082, as set in worker-service/application.properties)
-# This is primarily documentation; the actual port publishing is handled by docker-compose.yml.
+# 1. Install Tesseract OCR and all necessary native libraries.
+# CRITICAL FIX: Reverting to the existing '-dev' packages in Jammy,
+# which reliably bring in the necessary runtime libraries (like liblept5)
+# and ensure all image/PDF dependencies (tiff, jpeg, png, ghostscript) are present,
+# preventing the SIGSEGV crashes seen previously.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        ghostscript \
+        libtiff5 \
+        libjpeg-turbo8 \
+        libpng16-16 && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Manually download and place the Tesseract 4 'fast' trained data
+#    into the classic, expected directory: /usr/share/tessdata.
+RUN mkdir -p /usr/share/tessdata && \
+    wget -O /usr/share/tessdata/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
+
+# 3. Set TESSDATA_PREFIX to the classic directory.
+ENV TESSDATA_PREFIX=/usr/share/tessdata
+ENV LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
+
 EXPOSE 8082
 
-# Copy the built JAR file from the 'builder' stage into this final, small image.
-# We assume the JAR is named based on the artifactId: worker-service.jar
 COPY --from=builder /app/target/worker-service-0.0.1-SNAPSHOT.jar worker-service.jar
-
-# Define the command to run the Spring Boot application.
-# The application will automatically use the environment variables
-# (SPRING_RABBITMQ_HOST, SPRING_DATASOURCE_URL, etc.) passed via docker-compose.yml.
 ENTRYPOINT ["java", "-jar", "worker-service.jar"]

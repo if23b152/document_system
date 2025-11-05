@@ -2,6 +2,7 @@ package at.technikum_wien.worker_service.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Bean;
 
@@ -16,9 +17,14 @@ public class OcrConfig {
 
     private static final Logger log = LoggerFactory.getLogger(OcrConfig.class);
 
+    // Using the classic Tesseract data path, which the Dockerfile also uses.
+    @Value("${TESSDATA_PATH:/usr/share/tessdata}")
+    private String tesseractDataPath;
+
     @Bean
     public String tesseractPath() {
-        return "/usr/share/tessdata"; // or some configurable path
+        log.info("Configuring Tesseract data path (Classic Tesseract Path) to: {}", tesseractDataPath);
+        return tesseractDataPath;
     }
 
     @Bean
