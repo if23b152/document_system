@@ -27,6 +27,13 @@ docker-compose down
 │
 └── README.md                <-- instructions
 
+To take a look at the table in the database
+docker exec -it dms-postgres psql -U postgres
+After running this, you should see a prompt like:
+postgres=#
+This means you are now inside the PostgreSQL CLI.
+\c documentdb
+\d documents
 
 Link to GitHub repository:
 https://github.com/if23b196/Document-Management-System.git

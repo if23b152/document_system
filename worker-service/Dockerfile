@@ -1,35 +1,39 @@
-# Multi-stage build for a compact and secure final image
+# Multi-stage Dockerfile to build and run the worker-service efficiently
 
 # --- Stage 1: Build Stage (builder) ---
-# Use an official JDK image (matching your Java 21 requirement) to compile the application.
+# Use Java 21 JDK to compile the project
 FROM eclipse-temurin:21-jdk-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Maven pom.xml file first. This allows Docker to cache dependencies,
-# speeding up subsequent builds if only the source code changes.
+# Copy the Maven configuration first (for dependency caching)
 COPY pom.xml .
 
-# Copy the rest of the source code
+# Copy all source code and Maven wrapper files
 COPY src src
 COPY mvnw ./
 COPY .mvn .mvn
 
-# Package the application into a single runnable JAR file.
-# We skip tests (-DskipTests) here because Docker builds are often run without the full
-# test environment (like a running database connection).
+# Build the application and skip tests (faster build, no DB needed here)
 RUN ./mvnw clean install -DskipTests
 
+# --- Stage 2: Runtime Stage ---
+# Use a smaller Java runtime image (JRE only, no compiler)
 FROM eclipse-temurin:21-jre-jammy
 
+# Set working directory for the runtime container
 WORKDIR /app
 
-# 1. Install Tesseract OCR and all necessary native libraries.
-# CRITICAL FIX: Reverting to the existing '-dev' packages in Jammy,
-# which reliably bring in the necessary runtime libraries (like liblept5)
-# and ensure all image/PDF dependencies (tiff, jpeg, png, ghostscript) are present,
-# preventing the SIGSEGV crashes seen previously.
+# Install Tesseract OCR and required libraries (for image/PDF processing)
+# - Update package list
+# - Install required tools and libraries:
+#     wget: used to download files
+#     tesseract-ocr: main OCR engine
+#     tesseract-ocr-eng: English language data
+#     ghostscript: handles PDFs and PostScript files
+#     libtiff5, libjpeg-turbo8, libpng16-16: support common image formats
+# - Clean up to reduce image size
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget \
@@ -41,16 +45,19 @@ RUN apt-get update && \
         libpng16-16 && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. Manually download and place the Tesseract 4 'fast' trained data
-#    into the classic, expected directory: /usr/share/tessdata.
+# Download fast English OCR training data for Tesseract
 RUN mkdir -p /usr/share/tessdata && \
     wget -O /usr/share/tessdata/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/main/eng.traineddata
 
-# 3. Set TESSDATA_PREFIX to the classic directory.
+# Set environment variables for Tesseract
 ENV TESSDATA_PREFIX=/usr/share/tessdata
 ENV LD_LIBRARY_PATH=/usr/lib:/usr/local/lib
 
+# Expose port 8082 for the worker-service
 EXPOSE 8082
 
+# Copy the built JAR file from the builder stage into this container
 COPY --from=builder /app/target/worker-service-0.0.1-SNAPSHOT.jar worker-service.jar
+
+# Run the Spring Boot worker-service
 ENTRYPOINT ["java", "-jar", "worker-service.jar"]

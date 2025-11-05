@@ -9,31 +9,43 @@ import org.springframework.context.annotation.Bean;
 import java.io.File;
 
 /**
- * Configures Tesseract OCR settings (e.g., path to binaries, language data).
- * In a Docker setup, tesseract is typically installed in the container image.
+ * Configuration class for Tesseract OCR settings.
+ * Sets up paths and directories needed for OCR processing in the worker service.
+ * In Docker, Tesseract is usually installed inside the container image,
+ * so these paths must match the installed location.
  */
-@Configuration
+@Configuration // Marks this class as a Spring configuration class
 public class OcrConfig {
 
+    // Logger for printing messages during configuration
     private static final Logger log = LoggerFactory.getLogger(OcrConfig.class);
 
-    // Using the classic Tesseract data path, which the Dockerfile also uses.
+    // Path to the Tesseract "tessdata" directory (contains language training files)
+    // Uses an environment variable TESSDATA_PATH if available, otherwise defaults to /usr/share/tessdata
     @Value("${TESSDATA_PATH:/usr/share/tessdata}")
     private String tesseractDataPath;
 
-    @Bean
+    /**
+     * Provides the Tesseract data path as a Spring bean.
+     * This bean is injected into OcrService so it knows where to find language data.
+     */
+    @Bean // Marks this method as a bean provider
     public String tesseractPath() {
         log.info("Configuring Tesseract data path (Classic Tesseract Path) to: {}", tesseractDataPath);
         return tesseractDataPath;
     }
 
+    /**
+     * Creates a temporary directory for OCR processing.
+     * OCR engine needs a file on disk, so input streams are saved here before processing.
+     */
     @Bean
     public File tempOcrDir() {
-        File tempDir = new File("/tmp/ocr");
-        if (!tempDir.exists()) {
+        File tempDir = new File("/tmp/ocr"); // Path inside the container
+        if (!tempDir.exists()) {             // Create directory if it doesn’t exist
             boolean created = tempDir.mkdirs();
             log.info("Created temporary OCR directory: {}", created ? tempDir.getAbsolutePath() : "failed");
         }
-        return tempDir;
+        return tempDir; // Return the directory as a Spring bean
     }
 }

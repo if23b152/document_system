@@ -1,133 +1,209 @@
+# =====================================================================
+# Docker Compose File for the Document Management System (DMS)
+# Version: 3.9 means we are using a modern Docker Compose syntax.
+# This file defines and runs multiple services (containers) together.
+# =====================================================================
 version: "3.9"
 
 services:
   # -----------------------------------------------------------------
-  # 1. Database Service
+  # 1. Database Service (PostgreSQL)
   # -----------------------------------------------------------------
   postgres:
+    # Use the official PostgreSQL version 15 image from Docker Hub
     image: postgres:15
+
+    # The name given to this running container
     container_name: dms-postgres
+
+    # Environment variables configure the database
     environment:
-      POSTGRES_DB: documentdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: documentdb          # Name of the database to create
+      POSTGRES_USER: postgres          # Default database username
+      POSTGRES_PASSWORD: postgres      # Default password (simple for dev)
+
+    # Expose container port 5432 to the host (so our app can connect)
     ports:
       - "5432:5432"
+
+    # Persist data locally using a named Docker volume
+    # This prevents data loss when the container restarts or rebuilds
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   # -----------------------------------------------------------------
-  # 2. Messaging Broker Service
+  # 2. Messaging Broker Service (RabbitMQ)
   # -----------------------------------------------------------------
   rabbitmq:
+    # Use the RabbitMQ image that includes the management dashboard
     image: rabbitmq:3-management
+
+    # Container name to make it easier to reference in logs or network
     container_name: dms-rabbitmq
+
+    # The hostname inside the Docker network
     hostname: rabbitmq
+
+    # Map ports for RabbitMQ:
+    # 5672 is used for internal messaging between services
+    # 15672 is the management dashboard (accessible via browser)
     ports:
       - "5672:5672"
       - "15672:15672"
+
+    # Default credentials for RabbitMQ
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+    # Healthcheck ensures RabbitMQ is up and responding correctly
+    # before other services start depending on it
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 10s     # Check every 10 seconds
+      timeout: 5s       # Wait up to 5 seconds for a response
+      retries: 5        # Try 5 times before marking container as unhealthy
 
   # -----------------------------------------------------------------
-  # 3. MinIO Service (NEW for Sprint 4)
+  # 3. Object Storage Service (MinIO)
   # -----------------------------------------------------------------
   minio:
+    # MinIO is an S3-compatible object storage system (like AWS S3)
     image: minio/minio:latest
+
+    # The container name for MinIO
     container_name: dms-minio
+
+    # Automatically restart MinIO if it stops unexpectedly
     restart: always
+
+    # Expose two ports:
+    # 9000 -> main MinIO API (used by applications to store files)
+    # 9001 -> MinIO console (web dashboard at http://localhost:9001)
     ports:
-      - "9000:9000"  # MinIO API port
-      - "9001:9001"  # MinIO Console port (http://localhost:9001)
+      - "9000:9000"
+      - "9001:9001"
+
+    # Environment variables to set admin credentials
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+
+    # Store uploaded files in a named volume (persists between restarts)
     volumes:
       - minio_data:/data
+
+    # Start the MinIO server and enable the web console
     command: server /data --console-address ":9001"
+
+    # Healthcheck makes sure MinIO is live and responding to HTTP requests
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 30s    # Run the check every 30 seconds
+      timeout: 10s     # Wait 10 seconds for a response
+      retries: 3       # Retry 3 times before marking unhealthy
 
   # -----------------------------------------------------------------
   # 4. REST Server (PRODUCER)
   # -----------------------------------------------------------------
   rest-server:
+    # Build the REST server container from the Dockerfile in ./rest-server
     build:
-      context: ./rest-server
-      dockerfile: Dockerfile
+      context: ./rest-server           # Folder where the Dockerfile is located
+      dockerfile: Dockerfile           # Name of the Dockerfile to use
+
+    # The name of the running container
     container_name: rest-server
+
+    # Map internal port 8081 of the container to port 8081 on the host
     ports:
       - "8081:8081"
+
+    # Environment variables used by Spring Boot for configuration
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      # MinIO connection for file upload
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb  # Connect to PostgreSQL DB
+      SPRING_DATASOURCE_USERNAME: postgres  # Database username
+      SPRING_DATASOURCE_PASSWORD: postgres  # Database password
+      SPRING_RABBITMQ_HOST: rabbitmq        # RabbitMQ host name (container name)
+      SPRING_RABBITMQ_PORT: 5672            # RabbitMQ communication port
+
+      # MinIO connection details for storing uploaded files
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: documents
+      MINIO_BUCKET: documents # Bucket name for document storage
+
+    # Define which containers must start before this one
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_started # Wait until PostgreSQL starts
       rabbitmq:
-        condition: service_healthy
-      minio:  # Ensure MinIO starts before uploads
-        condition: service_healthy
+        condition: service_healthy # Wait until RabbitMQ passes health check
+      minio:
+        condition: service_healthy # Wait until MinIO is healthy
 
   # -----------------------------------------------------------------
   # 5. Worker Service (CONSUMER)
   # -----------------------------------------------------------------
   worker-service:
+    # Build the worker container from the Dockerfile in ./worker-service
     build:
-      context: ./worker-service
-      dockerfile: Dockerfile
+      context: ./worker-service # Path to worker-service project folder
+      dockerfile: Dockerfile    # Dockerfile used for building
+
+    # Name of the worker container
     container_name: worker-service
+
+    # Map container’s internal port 8082 to host port 8082
     ports:
       - "8082:8082"
+
+    # Environment variables for the Spring Boot worker service
     environment:
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      # MinIO connection for file download (same config)
+      SPRING_RABBITMQ_HOST: rabbitmq # Connect to RabbitMQ (message queue)
+      SPRING_RABBITMQ_PORT: 5672 # Default RabbitMQ port
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb # Connect to PostgreSQL
+      SPRING_DATASOURCE_USERNAME: postgres # Database username
+      SPRING_DATASOURCE_PASSWORD: postgres # Database password
+
+      # MinIO settings for downloading and processing stored files
       MINIO_URL: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: documents
+      MINIO_BUCKET: documents  # Same bucket as used by REST server
+
+    # Dependencies - ensure other services are ready before starting
     depends_on:
       rabbitmq:
-        condition: service_healthy
+        condition: service_healthy # Wait for RabbitMQ health check
       postgres:
-        condition: service_started
+        condition: service_started # Wait until PostgreSQL is up
       minio:
-        condition: service_healthy
+        condition: service_healthy # Wait for MinIO health check
 
   # -----------------------------------------------------------------
   # 6. UI Service
   # -----------------------------------------------------------------
   ui:
+    # Build the UI (frontend) container from the Dockerfile in ./ui folder
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: ./ui # Folder containing the frontend code
+      dockerfile: Dockerfile # Dockerfile for building UI container
+
+    # Name of the UI container
     container_name: ui
+
+    # Map host port 8080 to container’s internal web server port 80
     ports:
       - "8080:80"
+
+    # Ensure the UI waits for the REST server to be ready
     depends_on:
       - rest-server
 
+# -----------------------------------------------------------------
+# Docker Volumes (persistent storage)
+# -----------------------------------------------------------------
 volumes:
-  pgdata:
-  minio_data:
+  pgdata: # Keeps PostgreSQL database data between container restarts
+  minio_data:  # Keeps MinIO stored files persistent

@@ -110,13 +110,3 @@ public class DocumentService {
         return false;
     }
 }
-
-/*
-docker exec -it dms-postgres psql -U postgres
-After running this, you should see a prompt like:
-postgres=#
-This means you are now inside the PostgreSQL CLI.
-\c documentdb
-\d documents
-
- */
