@@ -1,4 +1,4 @@
-package at.technikum_wien.worker_service.messaging.config;
+package at.technikum_wien.worker_service.config;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;

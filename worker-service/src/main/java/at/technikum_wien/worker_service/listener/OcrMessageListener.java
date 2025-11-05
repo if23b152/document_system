@@ -1,6 +1,6 @@
-package at.technikum_wien.worker_service.messaging.listener;
+package at.technikum_wien.worker_service.listener;
 
-import at.technikum_wien.worker_service.messaging.config.RabbitMQConfig;
+import at.technikum_wien.worker_service.config.RabbitMQConfig;
 import at.technikum_wien.worker_service.model.OcrRequestMessage;
 
 import at.technikum_wien.worker_service.model.OcrResult;
