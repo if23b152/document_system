@@ -9,24 +9,6 @@ This is the frontend of our project and once you are done using our Document Man
 the IntelliJ terminal and run the following command:
 docker-compose down
 
-/document-management-system  <-- main project folder (git repo root)
-│
-├── rest-server/             <-- Spring Boot project (handles API, DB, queues)
-│
-├── ui/                      <-- frontend project (HTML/JS/React/Angular + served via nginx)
-│
-├── ocr-worker/              <-- Spring Boot (or Java) service for OCR
-│
-├── genai-worker/            <-- Spring Boot (or Java) service for calling Gemini and summarizing
-│
-├── indexing-worker/         <-- Spring Boot (or Java) service for pushing text to ElasticSearch
-│
-├── batch-processor/         <-- Spring Boot (or Java) service for scheduled XML processing
-│
-├── docker-compose.yml       <-- starts all services (REST, workers, db, queues, elastic, etc.)
-│
-└── README.md                <-- instructions
-
 To take a look at the table in the database
 docker exec -it dms-postgres psql -U postgres
 After running this, you should see a prompt like:
@@ -109,3 +91,4 @@ root DocumentManagementSystem/ folder, it is likely already part of the content 
 Mark as Resource Root (Optional): You can right-click the ui folder in the Project Explorer and mark it as a "Resource 
 Root" or "Sources Root" depending on what you're doing with it, but for simple static files, just having it visible is 
 often enough.
+
