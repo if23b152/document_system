@@ -158,6 +158,10 @@ services:
     ports:
       - "8082:8082"
 
+    # Tell Docker to read this file
+    env_file:
+      - ./api.env
+
     # Environment variables for the Spring Boot worker service
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq # Connect to RabbitMQ (message queue)
@@ -171,6 +175,13 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: documents  # Same bucket as used by REST server
+        
+      # --- GenAI Settings (New for Sprint 5) ---
+      # 1. API Key: Pulls the GEMINI_API_KEY from the host's environment
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      # 2. Model Name: Maps to the property 'gemini.model.name' in application.properties
+      GEMINI_MODEL_NAME: gemini-2.5-flash # Recommended model for fast summary generation
 
     # Dependencies - ensure other services are ready before starting
     depends_on:

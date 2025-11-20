@@ -2,6 +2,8 @@ package at.technikum_wien.worker_service.service;
 
 import at.technikum_wien.worker_service.model.OcrRequestMessage;
 import at.technikum_wien.worker_service.model.OcrResult;
+import at.technikum_wien.worker_service.model.ResultMessage;
+import at.technikum_wien.worker_service.producer.WorkerResultProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,33 +22,82 @@ public class DocumentProcessingService {
 
     private final MinioService minioService;
     private final OcrService ocrService;
+    private final GenAiService genAiService; // <-- NEW: Inject GenAiService
+    private final WorkerResultProducer resultProducer; // <-- NEW: Inject result producer
     private final File tempDir;
 
     @Autowired
-    public DocumentProcessingService(MinioService minioService, OcrService ocrService,
+    public DocumentProcessingService(MinioService minioService, OcrService ocrService, GenAiService genAiService,
+                                     WorkerResultProducer resultProducer, // <-- NEW parameters
                                      @Qualifier("tempOcrDir") File tempDir) {
         this.minioService = minioService;
         this.ocrService = ocrService;
+        this.genAiService = genAiService; // <-- Assign
+        this.resultProducer = resultProducer; // <-- Assign
         this.tempDir = tempDir;
     }
 
     public void processDocument(OcrRequestMessage message) {
         File tempFile = null;
+        Long documentId = message.getDocumentId();
+        ResultMessage finalResult = null; // Prepare a final result object
 
         try (InputStream pdfStream = minioService.downloadFile(message.getMinioObjectKey())) {
 
             tempFile = File.createTempFile("ocr_", ".pdf", tempDir);
             Files.copy(pdfStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-            OcrResult ocrResult = ocrService.performOcr(message.getDocumentId(), tempFile);
+            OcrResult ocrResult = ocrService.performOcr(documentId, tempFile);
 
-            if (!ocrResult.isSuccess()) {
-                log.error("OCR failed for document {}: {}", message.getDocumentId(), ocrResult.getError());
+            if (ocrResult.isSuccess()) {
+                log.info("OCR successful for document {}. Starting GenAI summary generation.", documentId);
+
+                String summary = "";
+                try {
+                    // --- Sprint 5: Call GenAI Service ---
+                    summary = genAiService.generateSummary(ocrResult.getText());
+                    log.info("GenAI summary generated for document {}. Summary length: {} characters.", documentId,
+                            summary.length());
+
+                    // Full Success Path
+                    finalResult = new ResultMessage(documentId, ocrResult.getText(), summary, true, null);
+
+                } catch (Exception genAiException) {
+                    // GenAI Failure Path (OCR was successful, but summary failed)
+                    log.error("GenAI summary generation failed for document {}: {}", documentId,
+                            genAiException.getMessage(), genAiException);
+                    finalResult = new ResultMessage(documentId, ocrResult.getText(),
+                            null, // Summary is null
+                            false, "GenAI failed: " + genAiException.getMessage()
+                    );
+                }
+
+            } else {
+                // OCR Failure Path
+                log.error("OCR failed for document {}: {}", documentId, ocrResult.getError());
+                finalResult = new ResultMessage(documentId,
+                        null, // Text is null
+                        null, // Summary is null
+                        false, "OCR failed: " + ocrResult.getError()
+                );
             }
 
         } catch (Exception e) {
-            log.error("Failed to process document {}: {}", message.getDocumentId(), e.getMessage(), e);
+            // General Failure Path (e.g., MinIO download, file I/O)
+            log.error("Failed to process document {} due to an unexpected error: {}", documentId, e.getMessage(), e);
+            finalResult = new ResultMessage(documentId, null, null, false,
+                    "Worker processing failed: " + e.getMessage()
+            );
+
         } finally {
+            // --- Sprint 5: Send final result back to REST server ---
+            if (finalResult != null) {
+                resultProducer.sendResult(finalResult);
+                log.info("Final result message sent to REST server for document {}. Success: {}.",
+                        documentId, finalResult.isSuccess());
+            }
+
+            // Cleanup
             if (tempFile != null && tempFile.exists()) {
                 boolean deleted = tempFile.delete();
                 if (!deleted) {

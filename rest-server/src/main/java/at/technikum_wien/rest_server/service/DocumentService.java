@@ -62,7 +62,7 @@ public class DocumentService {
         document.setMinioObjectKey(objectKey); // use object key instead of storagePath
         document.setUploadTimestamp(LocalDateTime.now());
         document.setOcrProcessed(false);
-        document.setGenAiSummarized(false);
+        // document.setGenAiSummarized(false);
 
         Document savedDocument = documentRepository.save(document);
 
@@ -81,6 +81,37 @@ public class DocumentService {
         }
 
         return savedDocument;
+    }
+
+    // -------------------------------
+    // UPDATE METHODS FOR OCR + SUMMARY
+    // -------------------------------
+    @Transactional
+    public void saveOcrAndSummary(Long documentId, String summary) {
+        Document doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+
+        doc.setOcrProcessed(true);  // OCR completed successfully
+
+        if (summary != null) {
+            doc.setSummary(summary);  // GenAI summary
+        }
+
+        documentRepository.save(doc);
+
+        log.info("Document {} successfully updated with summary.", documentId);
+    }
+
+    @Transactional
+    public void markProcessingFailed(Long documentId, String errorMessage) {
+        Document doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+
+        doc.setOcrProcessed(false); // failure means OCR/summary didn't complete
+
+        documentRepository.save(doc);
+
+        log.error("Document {} marked as failed: {}", documentId, errorMessage);
     }
 
     public List<Document> getAllDocuments() {

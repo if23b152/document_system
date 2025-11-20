@@ -1,12 +1,8 @@
 package at.technikum_wien.rest_server.messaging.config;
 
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
-import org.springframework.amqp.core.TopicExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -19,49 +15,72 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 @Configuration
 public class RabbitMQConfig {
 
-    // Naming constants for easy reference and management
-    public static final String QUEUE_NAME = "ocr-queue";
+    // --- Existing OCR inbound queue for worker requests ---
+    public static final String OCR_QUEUE = "ocr-queue";
     public static final String EXCHANGE_NAME = "dms-exchange";
-    public static final String ROUTING_KEY = "ocr.process"; // Key used by producer to route message
+    public static final String OCR_ROUTING_KEY = "ocr.process";
 
-    /**
-     * Defines the Queue bean.
-     * The Queue is durable (persists across broker restarts) and non-exclusive.
-     */
+    // --- NEW: Queue for results returning from the worker ---
+    public static final String RESULT_QUEUE = "result-queue";
+    public static final String RESULT_ROUTING_KEY = "result.process";
+
+    // ------------------------------
+    //  OCR Request Queue (existing)
+    // ------------------------------
     @Bean
     public Queue ocrQueue() {
-        // Queue(name, durable, exclusive, autoDelete)
-        return new Queue(QUEUE_NAME, true, false, false);
+        return new Queue(OCR_QUEUE, true, false, false);
     }
 
-    /**
-     * Defines the Topic Exchange bean.
-     * Topic exchanges allow for flexible routing based on the ROUTING_KEY pattern.
-     */
+    // ------------------------------
+    //  NEW: Worker Result Queue
+    // ------------------------------
+    @Bean
+    public Queue resultQueue() {
+        return new Queue(RESULT_QUEUE, true, false, false);
+    }
+
+    // ------------------------------
+    // Topic Exchange (shared)
+    // ------------------------------
     @Bean
     public TopicExchange dmsExchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
 
-    /**
-     * Binds the Queue to the Exchange using the Routing Key.
-     * This tells the RabbitMQ broker: "Route any message sent to 'dms-exchange'
-     * with a routing key of 'ocr.process' into the 'ocr-queue'."
-     */
+    // ------------------------------
+    // Binding: OCR requests
+    // ------------------------------
     @Bean
-    public Binding binding(Queue ocrQueue, TopicExchange dmsExchange) {
+    public Binding ocrBinding(Queue ocrQueue, TopicExchange dmsExchange) {
         return BindingBuilder
                 .bind(ocrQueue)
                 .to(dmsExchange)
-                .with(ROUTING_KEY);
+                .with(OCR_ROUTING_KEY);
     }
 
+    // ------------------------------
+    // NEW Binding: Worker results
+    // ------------------------------
+    @Bean
+    public Binding resultBinding(Queue resultQueue, TopicExchange dmsExchange) {
+        return BindingBuilder
+                .bind(resultQueue)
+                .to(dmsExchange)
+                .with(RESULT_ROUTING_KEY);
+    }
 
+    // ------------------------------
+    // JSON converter for messages
+    // ------------------------------
     @Bean
     public Jackson2JsonMessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
+    // ------------------------------
+    // RabbitTemplate with JSON support
+    // ------------------------------
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);

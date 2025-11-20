@@ -37,5 +37,5 @@ public class Document {
     private String tags;
 
     private Boolean ocrProcessed = false;
-    private Boolean genAiSummarized = false;
+    // private Boolean genAiSummarized = false;
 }

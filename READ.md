@@ -20,6 +20,9 @@ This means you are now inside the PostgreSQL CLI.
 Link to GitHub repository:
 https://github.com/if23b196/Document-Management-System.git
 
+To get project structure without some unnecessary files:
+Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|\\.idea\\|\\target\\|\\test\\' } | Select-Object -ExpandProperty FullName
+
 Workflow with Git:
 Git Branch Workflow
 1. Start from main

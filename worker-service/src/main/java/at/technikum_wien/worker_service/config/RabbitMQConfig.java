@@ -22,6 +22,10 @@ public class RabbitMQConfig {
     // Routing key used to match messages to the OCR queue
     public static final String ROUTING_KEY = "ocr.process";
 
+    // --- NEW: Result outbound queue ---
+    public static final String RESULT_QUEUE = "result-queue";
+    public static final String RESULT_ROUTING_KEY = "result.process";
+
     /**
      * Creates a durable queue for OCR messages.
      * Durable = true means the queue survives RabbitMQ restarts.
@@ -30,6 +34,14 @@ public class RabbitMQConfig {
     @Bean
     public Queue ocrQueue() {
         return new Queue(QUEUE_NAME, true, false, false);
+    }
+
+    /**
+     * NEW: Result queue for sending summary + OCR text back to REST server.
+     */
+    @Bean
+    public Queue resultQueue() {
+        return new Queue(RESULT_QUEUE, true, false, false);
     }
 
     /**
@@ -47,8 +59,18 @@ public class RabbitMQConfig {
      * This ensures messages sent with "ocr.process" reach the OCR queue.
      */
     @Bean
-    public Binding binding(Queue ocrQueue, TopicExchange dmsExchange) {
+    public Binding ocrBinding(Queue ocrQueue, TopicExchange dmsExchange) {
         return BindingBuilder.bind(ocrQueue).to(dmsExchange).with(ROUTING_KEY);
+    }
+
+    /**
+     * NEW: Binding for result queue.
+     */
+    @Bean
+    public Binding resultBinding(Queue resultQueue, TopicExchange dmsExchange) {
+        return BindingBuilder.bind(resultQueue)
+                .to(dmsExchange)
+                .with(RESULT_ROUTING_KEY);
     }
 
     // --- JSON converter for DTO messages ---

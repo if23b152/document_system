@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 
 // Marks this class as a Spring-managed component so it can be auto-detected and used
 @Component
-public class OcrMessageListener {
+public class MessageListener {
 
     private final DocumentProcessingService documentProcessingService;
 
-    public OcrMessageListener(DocumentProcessingService documentProcessingService) {
+    public MessageListener(DocumentProcessingService documentProcessingService) {
         this.documentProcessingService = documentProcessingService;
     }
 

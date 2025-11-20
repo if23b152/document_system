@@ -37,7 +37,7 @@ public class DocumentMessageProducer {
         try {
             rabbitTemplate.convertAndSend(
                     RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.ROUTING_KEY,
+                    RabbitMQConfig.OCR_ROUTING_KEY,
                     message
             );
 
@@ -46,7 +46,7 @@ public class DocumentMessageProducer {
                     Exchange: {}
                     RoutingKey: {}
                     Payload: {}
-                    """, RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY, message);
+                    """, RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_ROUTING_KEY, message);
 
         } catch (AmqpException e) {
             log.error("[PRODUCER FAILURE] Failed to send OCR message for document ID {}: {}", documentId, e.getMessage(), e);
