@@ -101,6 +101,12 @@
             <artifactId>google-genai</artifactId>
             <version>1.0.0</version>
         </dependency>
+
+        <!-- Elasticsearch integration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

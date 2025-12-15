@@ -13,14 +13,11 @@ public class GenAiConfig {
 
     private static final Logger log = LoggerFactory.getLogger(GenAiConfig.class);
 
-    @Value("${gemini.api.key}")
-    private String apiKey;
-
     @Value("${gemini.model.name}")
     private String modelName;
 
     @Bean
-    public Client genAiClient() {
+    public Client genAiClient(@Value("${gemini.api.key}") String apiKey) {
         log.info("Initializing Google GenAI Client for model: {}", modelName);
 
         // debug log (remove later if needed) to prove the key is reaching Java
@@ -36,6 +33,7 @@ public class GenAiConfig {
                 .build();
     }
 
+    // unüblich, direkt über @Value
     @Bean
     public String genAiModelName() {
         return modelName;

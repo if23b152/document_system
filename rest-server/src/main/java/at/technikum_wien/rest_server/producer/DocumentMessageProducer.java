@@ -1,6 +1,6 @@
-package at.technikum_wien.rest_server.messaging.producer;
+package at.technikum_wien.rest_server.producer;
 
-import at.technikum_wien.rest_server.messaging.config.RabbitMQConfig;
+import at.technikum_wien.rest_server.config.RabbitMQConfig;
 import at.technikum_wien.rest_server.model.OcrRequestMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

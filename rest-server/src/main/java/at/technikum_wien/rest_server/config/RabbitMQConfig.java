@@ -1,4 +1,4 @@
-package at.technikum_wien.rest_server.messaging.config;
+package at.technikum_wien.rest_server.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

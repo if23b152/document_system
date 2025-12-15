@@ -22,7 +22,7 @@ public class RabbitMQConfig {
     // Routing key used to match messages to the OCR queue
     public static final String ROUTING_KEY = "ocr.process";
 
-    // --- NEW: Result outbound queue ---
+    // --- Result outbound queue ---
     public static final String RESULT_QUEUE = "result-queue";
     public static final String RESULT_ROUTING_KEY = "result.process";
 

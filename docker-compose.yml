@@ -133,6 +133,9 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: documents # Bucket name for document storage
 
+      # Elasticsearch
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+
     # Define which containers must start before this one
     depends_on:
       postgres:
@@ -141,6 +144,8 @@ services:
         condition: service_healthy # Wait until RabbitMQ passes health check
       minio:
         condition: service_healthy # Wait until MinIO is healthy
+      elasticsearch:
+        condition: service_healthy
 
   # -----------------------------------------------------------------
   # 5. Worker Service (CONSUMER)
@@ -176,12 +181,12 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: documents  # Same bucket as used by REST server
         
-      # --- GenAI Settings (New for Sprint 5) ---
+      # --- GenAI Settings ---
       # 1. API Key: Pulls the GEMINI_API_KEY from the host's environment
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
 
-      # 2. Model Name: Maps to the property 'gemini.model.name' in application.properties
-      GEMINI_MODEL_NAME: gemini-2.5-flash # Recommended model for fast summary generation
+      # Elasticsearch
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
 
     # Dependencies - ensure other services are ready before starting
     depends_on:
@@ -191,6 +196,8 @@ services:
         condition: service_started # Wait until PostgreSQL is up
       minio:
         condition: service_healthy # Wait for MinIO health check
+      elasticsearch:
+        condition: service_healthy
 
   # -----------------------------------------------------------------
   # 6. UI Service
@@ -212,9 +219,40 @@ services:
     depends_on:
       - rest-server
 
+  # -----------------------------------------------------------------
+  # 7. Elasticsearch (Search Engine)
+  # -----------------------------------------------------------------
+  elasticsearch:
+    # Official Elasticsearch image
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+
+    # Container name
+    container_name: elasticsearch
+
+    # Environment variables for a simple single-node setup
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+
+    # Expose Elasticsearch default port
+    ports:
+      - "9200:9200"
+
+    # Persist Elasticsearch index data
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+    # Healthcheck to ensure ES is ready before dependent services start
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
 # -----------------------------------------------------------------
 # Docker Volumes (persistent storage)
 # -----------------------------------------------------------------
 volumes:
   pgdata: # Keeps PostgreSQL database data between container restarts
   minio_data:  # Keeps MinIO stored files persistent
+  esdata:   # Keeps Elasticsearch indices persistent

@@ -77,7 +77,13 @@
             <!-- Use the latest stable version for your project. As of now, this is a common version. -->
             <version>8.5.10</version>
         </dependency>
-	</dependencies>
+
+        <!-- Elasticsearch integration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<plugins>

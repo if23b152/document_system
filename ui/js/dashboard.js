@@ -7,19 +7,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     // Accepts an optional "query" parameter to filter the list of documents by name
     async function fetchDocs(query = "") {
         // Call the backend REST API to get the list of documents
-        const res = await fetch('/api/documents');
+        const url = query
+            ? `/api/documents/search?query=${encodeURIComponent(query)}`
+            : '/api/documents';
+
+        const res = await fetch(url);
+
         const docs = await res.json(); // Convert the response to JSON (JavaScript objects)
 
         ul.innerHTML = ""; // Clear out any existing document list items
 
-        // Filter the documents list based on the search query (case-insensitive)
+        // Filter the document list based on the search query (case-insensitive)
         docs
-            .filter(doc => {
-                // Extract fileName from the current document object
-                const {fileName} = doc;
-                // Return only docs whose fileName contains the query string
-                return fileName.toLowerCase().includes(query.toLowerCase());
-            })
             // For each document, create a <li> element and append it to the <ul>
             .forEach(doc => {
                 // Destructure properties from the document object
@@ -32,7 +31,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
                 // Add a CSS class to make the list item look clickable
                 li.classList.add('clickable-doc');
-                // Add an event listener so clicking a list item navigates to the details page
+                // Add an event listener, so clicking a list item navigates to the details page
                 li.addEventListener('click', () => viewDetails(id));
 
                 // Add the list item to the <ul>
@@ -46,7 +45,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         window.location.href = `document-details.html?id=${id}`;
     }
 
-    // Add event listener for the upload form submission
+    // Add an event listener for the upload form submission
     document.getElementById('uploadForm').addEventListener('submit',
         async function (e) {
             e.preventDefault(); // Prevent the page from reloading when submitting the form
@@ -61,7 +60,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             form.append("file", file);
 
             try {
-                // Send file to the backend API for upload
+                // Send the file to the backend API for upload
                 const res = await fetch('/api/documents/upload', {method: 'POST', body: form});
                 if (res.ok) {
                     alert("Upload success!"); // Notify success
@@ -80,7 +79,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('searchForm').addEventListener('submit', async function (e) {
         e.preventDefault(); // Prevent page reload
         const query = document.getElementById('searchInput').value;
-        await fetchDocs(query); // Call fetchDocs with query
+        await fetchDocs(query); // Call fetchDocs with the query
     });
 
     // Perform an initial fetch of documents when the page loads

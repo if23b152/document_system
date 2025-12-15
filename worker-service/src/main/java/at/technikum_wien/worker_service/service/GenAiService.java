@@ -13,8 +13,10 @@ public class GenAiService {
     private static final Logger log = LoggerFactory.getLogger(GenAiService.class);
 
     private final Client genAiClient;
+    // direkt hier @value
     private final String modelName;
 
+    // unüblich, direkt über @Value
     public GenAiService(Client genAiClient, String genAiModelName) {
         this.genAiClient = genAiClient;
         this.modelName = genAiModelName;
@@ -39,6 +41,7 @@ public class GenAiService {
                             prompt,
                             null // No extra parameters for now
                     );
+// system prompt, user prompt, text länge vorgeben
 
             String summary = response.text();
 

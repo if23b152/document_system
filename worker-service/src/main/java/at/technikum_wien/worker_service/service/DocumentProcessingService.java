@@ -3,6 +3,7 @@ package at.technikum_wien.worker_service.service;
 import at.technikum_wien.worker_service.model.OcrRequestMessage;
 import at.technikum_wien.worker_service.model.OcrResult;
 import at.technikum_wien.worker_service.model.ResultMessage;
+import at.technikum_wien.worker_service.model.SearchDocument;
 import at.technikum_wien.worker_service.producer.WorkerResultProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,18 +23,20 @@ public class DocumentProcessingService {
 
     private final MinioService minioService;
     private final OcrService ocrService;
-    private final GenAiService genAiService; // <-- NEW: Inject GenAiService
-    private final WorkerResultProducer resultProducer; // <-- NEW: Inject result producer
+    private final GenAiService genAiService;
+    private final WorkerResultProducer resultProducer;
     private final File tempDir;
+    private final ElasticsearchService elasticsearchService;
 
     @Autowired
     public DocumentProcessingService(MinioService minioService, OcrService ocrService, GenAiService genAiService,
-                                     WorkerResultProducer resultProducer, // <-- NEW parameters
+                                     WorkerResultProducer resultProducer, ElasticsearchService elasticsearchService,
                                      @Qualifier("tempOcrDir") File tempDir) {
         this.minioService = minioService;
         this.ocrService = ocrService;
-        this.genAiService = genAiService; // <-- Assign
-        this.resultProducer = resultProducer; // <-- Assign
+        this.genAiService = genAiService;
+        this.resultProducer = resultProducer;
+        this.elasticsearchService = elasticsearchService;
         this.tempDir = tempDir;
     }
 
@@ -52,7 +55,7 @@ public class DocumentProcessingService {
             if (ocrResult.isSuccess()) {
                 log.info("OCR successful for document {}. Starting GenAI summary generation.", documentId);
 
-                String summary = "";
+                String summary;
                 try {
                     // --- Sprint 5: Call GenAI Service ---
                     summary = genAiService.generateSummary(ocrResult.getText());
@@ -61,6 +64,10 @@ public class DocumentProcessingService {
 
                     // Full Success Path
                     finalResult = new ResultMessage(documentId, ocrResult.getText(), summary, true, null);
+
+                    // --- Sprint 6: Index document in Elasticsearch ---
+                    elasticsearchService.indexDocument(new SearchDocument(documentId, message.getFileName(),
+                            ocrResult.getText(), summary));
 
                 } catch (Exception genAiException) {
                     // GenAI Failure Path (OCR was successful, but summary failed)
@@ -90,7 +97,7 @@ public class DocumentProcessingService {
             );
 
         } finally {
-            // --- Sprint 5: Send final result back to REST server ---
+            // --- Sprint 5: Send the final result back to REST server ---
             if (finalResult != null) {
                 resultProducer.sendResult(finalResult);
                 log.info("Final result message sent to REST server for document {}. Success: {}.",

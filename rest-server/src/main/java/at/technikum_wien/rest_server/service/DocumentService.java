@@ -1,6 +1,6 @@
 package at.technikum_wien.rest_server.service;
 
-import at.technikum_wien.rest_server.messaging.producer.DocumentMessageProducer;
+import at.technikum_wien.rest_server.producer.DocumentMessageProducer;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
 import org.slf4j.Logger;
@@ -77,29 +77,10 @@ public class DocumentService {
         } catch (AmqpException e) {
             log.error("[RabbitMQ ERROR] Document ID {} saved but failed to send OCR message. Error: {}",
                     savedDocument.getId(), e.getMessage(), e);
-            // Do not rethrow to avoid rollback of DB transaction
+            // Do not rethrow to avoid rollback of the DB transaction
         }
 
         return savedDocument;
-    }
-
-    // -------------------------------
-    // UPDATE METHODS FOR OCR + SUMMARY
-    // -------------------------------
-    @Transactional
-    public void saveOcrAndSummary(Long documentId, String summary) {
-        Document doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
-
-        doc.setOcrProcessed(true);  // OCR completed successfully
-
-        if (summary != null) {
-            doc.setSummary(summary);  // GenAI summary
-        }
-
-        documentRepository.save(doc);
-
-        log.info("Document {} successfully updated with summary.", documentId);
     }
 
     @Transactional
@@ -112,6 +93,25 @@ public class DocumentService {
         documentRepository.save(doc);
 
         log.error("Document {} marked as failed: {}", documentId, errorMessage);
+    }
+
+    // -------------------------------
+    // UPDATE METHODS FOR OCR + SUMMARY
+    // -------------------------------
+    @Transactional
+    public void saveSummary(Long documentId, String summary) {
+        Document doc = documentRepository.findById(documentId)
+                .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
+
+        doc.setOcrProcessed(true);  // OCR completed successfully
+
+        if (summary != null) {
+            doc.setSummary(summary);  // GenAI summary
+        }
+
+        documentRepository.save(doc);
+
+        log.info("Document {} successfully updated with summary.", documentId);
     }
 
     public List<Document> getAllDocuments() {
