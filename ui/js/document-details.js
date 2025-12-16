@@ -61,7 +61,7 @@ async function handleUpdate(event) {
         fileName += ".pdf";
     }
 
-    // Gather updated values from form
+    // Gather updated values from the form
     const updatedDoc = {
         fileName,
         summary: document.getElementById("summaryInput").value,
@@ -69,7 +69,7 @@ async function handleUpdate(event) {
     };
 
     try {
-        // Send PUT request with updated document data
+        // Send the PUT request with updated document data
         const res = await fetch(`/api/documents/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -110,7 +110,7 @@ async function handleDelete() {
         const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
         if (res.ok) {
             alert("Document deleted successfully.");
-            // Redirect back to dashboard after delete
+            // Redirect back to the dashboard after delete
             window.location.href = "dashboard.html";
         } else if (res.status === 404) {
             alert("Document not found.");
@@ -123,11 +123,84 @@ async function handleDelete() {
     }
 }
 
-// Wait for DOM to load, then initialize page
+// =====================
+// COMMENTS LOGIC
+// =====================
+
+// Load comments for the current document
+async function loadComments() {
+    const id = getIdFromUrl();
+    const list = document.getElementById("commentsList");
+    list.innerHTML = "";
+
+    try {
+        const res = await fetch(`/api/comments/document/${id}`);
+        if (!res.ok) return;
+
+        const comments = await res.json();
+
+        if (comments.length === 0) {
+            const li = document.createElement("li");
+            li.className = "list-group-item text-muted";
+            li.textContent = "No comments yet.";
+            list.appendChild(li);
+            return;
+        }
+
+        comments.forEach(comment => {
+            const li = document.createElement("li");
+            li.className = "list-group-item";
+
+            const date = new Date(comment.createdAt).toLocaleString();
+
+            li.innerHTML = `
+                <div class="fw-bold small text-muted mb-1">${date}</div>
+                <div>${comment.content}</div>
+            `;
+
+            list.appendChild(li);
+        });
+
+    } catch (err) {
+        console.error("Failed to load comments:", err);
+    }
+}
+
+// Handle adding a new comment
+async function handleAddComment(event) {
+    event.preventDefault();
+    const id = getIdFromUrl();
+    const textarea = document.getElementById("commentInput");
+    const content = textarea.value.trim();
+
+    if (!content) return;
+
+    try {
+        const res = await fetch(`/api/comments/document/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain" },
+            body: content
+        });
+
+        if (res.ok) {
+            textarea.value = "";
+            await loadComments();
+        } else {
+            alert("Failed to add comment.");
+        }
+    } catch (err) {
+        console.error("Failed to add comment:", err);
+        alert("Error while adding comment.");
+    }
+}
+
+// Wait for DOM to load, then initialize the page
 document.addEventListener("DOMContentLoaded", async () => {
-    await loadDetail(); // load document details on page load
+    await loadDetail(); // load document details on the page load
+    await loadComments();
     // Attach event listeners to form buttons
     document.getElementById("editForm").addEventListener("submit", handleUpdate);
     document.getElementById("cancelBtn").addEventListener("click", handleCancel);
     document.getElementById("deleteBtn").addEventListener("click", handleDelete);
+    document.getElementById("commentForm").addEventListener("submit", handleAddComment);
 });

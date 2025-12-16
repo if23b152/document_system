@@ -104,6 +104,51 @@
             </div>
         </div>
     </div>
+    <!-- ===================== -->
+    <!-- Comments Section -->
+    <!-- ===================== -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm rounded-4">
+                <div class="card-body">
+
+                    <h2 class="h4 fw-bold text-primary mb-4">Comments</h2>
+
+                    <!-- Add Comment -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Add a Comment</h5>
+
+                        <form id="commentForm">
+                            <div class="mb-3">
+                                <textarea
+                                        id="commentInput"
+                                        class="form-control rounded-3"
+                                        rows="3"
+                                        placeholder="Write your comment here..."
+                                        required
+                                ></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary px-4">
+                                Post Comment
+                            </button>
+                        </form>
+                    </div>
+
+                    <hr>
+
+                    <!-- Comments List -->
+                    <div>
+                        <h5 class="mb-3">All Comments</h5>
+                        <ul id="commentsList" class="list-group list-group-flush">
+                            <!-- JS injects comments here -->
+                        </ul>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Bootstrap JS + Popper -->

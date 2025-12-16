@@ -1,8 +1,11 @@
 package at.technikum_wien.rest_server.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -38,4 +41,13 @@ public class Document {
 
     private Boolean ocrProcessed = false;
     // private Boolean genAiSummarized = false;
+
+    // === NEW: Comments ===
+    @OneToMany(
+            mappedBy = "document",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    @JsonManagedReference
+    private List<Comment> comments = new ArrayList<>();
 }

@@ -1,21 +1,49 @@
-/* Optional: custom background for card body */
-.card-body {
-    background-color: #ffffff;
-}
-
-/* Optional: small spacing tweaks */
+/* Global font */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Scrollable details list if it gets too long */
-#details {
-    max-height: 300px;
-    overflow-y: auto;
+/* Card styling */
+.card {
+    border-radius: 1rem; /* rounder cards */
 }
 
-/* Optional: smooth border color on focus for inputs */
-.form-control:focus, textarea:focus {
+.card-body {
+    background-color: #ffffff;
+    border-radius: 1rem;
+}
+
+/* Inputs & textareas */
+.form-control,
+textarea {
+    border-radius: 0.75rem;
+}
+
+/* Focus state */
+.form-control:focus,
+textarea:focus {
     border-color: #2563eb;
     box-shadow: none;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 0.75rem;
+}
+
+/* Comment list items */
+.list-group-item {
+    border: none;
+    padding: 0.75rem 0;
+}
+
+/* Subtle divider spacing */
+hr {
+    margin: 2rem 0;
+}
+
+/* Optional: scrollable comments if many */
+#commentsList {
+    max-height: 300px;
+    overflow-y: auto;
 }
