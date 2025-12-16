@@ -1,35 +1,62 @@
-/* Optional extra styling for corporate look */
-
+/* Global font */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Headings */
 h1 {
     letter-spacing: 0.5px;
 }
 
+/* Cards */
+.card {
+    border-radius: 1rem;
+}
+
+.card-body {
+    background-color: #ffffff;
+    border-radius: 1rem;
+}
+
+/* Inputs & buttons */
+.form-control {
+    border-radius: 0.75rem;
+}
+
+.form-control:focus {
+    border-color: #2563eb;
+    box-shadow: none;
+}
+
+.btn {
+    border-radius: 0.75rem;
+}
+
+/* Document list */
 #docs li {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     transition: all 0.2s ease-in-out;
     cursor: pointer;
 }
 
 #docs li:hover {
-    background-color: #e7f1ff; /* subtle hover highlight */
+    background-color: #e7f1ff;
 }
 
-#docs li button {
-    font-size: 0.875rem;
-}
-
-/* Make list-group flush items slightly spaced */
+/* List group spacing */
 #docs .list-group-item {
     margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
+    border: none;
+}
+
+/* Scroll container */
+.overflow-auto {
+    padding-right: 0.25rem;
 }
 
 /* Responsive adjustments */
@@ -38,9 +65,5 @@ h1 {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
-    }
-
-    #docs li button {
-        align-self: flex-end;
     }
 }

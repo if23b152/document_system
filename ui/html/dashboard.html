@@ -13,23 +13,29 @@
 
 <!-- Main container -->
 <div class="container py-5">
-    <!-- Header -->
-    <header class="mb-5 text-center">
-        <h1 class="fw-bold text-primary">Document Dashboard</h1>
-        <p class="text-muted">Manage, upload, and search your corporate documents efficiently</p>
+    <!-- Header / Hero -->
+    <header class="mb-5">
+        <div class="card shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+                <h1 class="fw-bold text-primary mb-3">Document Dashboard</h1>
+                <p class="text-muted mb-0">
+                    Manage, upload, and search your corporate documents efficiently
+                </p>
+            </div>
+        </div>
     </header>
 
     <!-- Upload Document Card -->
     <section class="mb-4" aria-labelledby="upload-heading">
         <h2 id="upload-heading" class="visually-hidden">Upload Document</h2>
-        <div class="card shadow-sm">
+        <div class="card shadow-sm rounded-4">
             <div class="card-body">
                 <form id="uploadForm" class="d-flex gap-2 align-items-stretch">
                     <!-- File input -->
-                    <input type="file" class="form-control" id="fileInput" name="file" accept="application/pdf" required>
+                    <input type="file" class="form-control rounded-3" id="fileInput" name="file" accept="application/pdf" required>
 
                     <!-- Upload button: use 'btn' + 'd-flex align-items-center' + 'px-3' to match height -->
-                    <button type="submit" class="btn btn-primary d-flex align-items-center px-3">
+                    <button type="submit" class="btn btn-primary rounded-3 px-4">
                         Upload
                     </button>
                 </form>
@@ -40,14 +46,14 @@
     <!-- Search Card -->
     <section class="mb-4" aria-labelledby="search-heading">
         <h2 id="search-heading" class="visually-hidden">Search Documents</h2>
-        <div class="card shadow-sm">
+        <div class="card shadow-sm rounded-4">
             <div class="card-body">
                 <form id="searchForm" class="d-flex gap-2 align-items-stretch flex-column flex-md-row">
                     <!-- Text input -->
-                    <input type="text" id="searchInput" class="form-control" placeholder="Search by file name" aria-label="Search documents by file name">
+                    <input type="text" id="searchInput" class="form-control rounded-3" placeholder="Search by file name" aria-label="Search documents by file name">
 
                     <!-- Search button matches height of input -->
-                    <button id="searchBtn" class="btn btn-outline-primary d-flex align-items-center px-3">
+                    <button id="searchBtn" class="btn btn-primary rounded-3 px-4">
                         Search
                     </button>
                 </form>
@@ -58,7 +64,7 @@
 
     <section aria-labelledby="docs-heading">
         <h2 id="docs-heading" class="visually-hidden">Document List</h2>
-        <div class="card shadow-sm">
+        <div class="card shadow-sm rounded-4">
             <div class="card-body">
                 <!-- Fixed-height, scrollable container using Bootstrap -->
                 <div class="overflow-auto" style="max-height: 400px;">

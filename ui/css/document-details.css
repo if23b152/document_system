@@ -3,6 +3,11 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Headings */
+h1 {
+    letter-spacing: 0.5px;
+}
+
 /* Card styling */
 .card {
     border-radius: 1rem; /* rounder cards */
