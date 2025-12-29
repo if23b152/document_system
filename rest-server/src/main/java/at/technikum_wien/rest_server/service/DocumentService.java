@@ -1,5 +1,7 @@
 package at.technikum_wien.rest_server.service;
 
+import at.technikum_wien.rest_server.mapper.DocumentMapper;
+import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
 import at.technikum_wien.rest_server.producer.DocumentMessageProducer;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
@@ -26,14 +28,17 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentMessageProducer messageProducer;
     private final MinioService minioService; // for MinIO file upload
+    private final DocumentMapper documentMapper; // <-- add this
 
     @Autowired
     public DocumentService(DocumentRepository documentRepository,
                            DocumentMessageProducer messageProducer,
-                           MinioService minioService) { // include MinioService
+                           MinioService minioService,
+                           DocumentMapper documentMapper) { // <-- inject mapper
         this.documentRepository = documentRepository;
         this.messageProducer = messageProducer;
         this.minioService = minioService;
+        this.documentMapper = documentMapper;
     }
 
     /**
@@ -123,13 +128,12 @@ public class DocumentService {
     }
 
     @Transactional
-    public Optional<Document> updateDocument(Long id, Document updatedData) {
-        return documentRepository.findById(id).map(existing -> {
-            existing.setFileName(updatedData.getFileName());
-            existing.setTags(updatedData.getTags());
-            existing.setSummary(updatedData.getSummary());
-            return documentRepository.save(existing);
-        });
+    public Optional<Document> updateDocument(Long id, UpdateDocumentRequest dto) {
+        return documentRepository.findById(id)
+                .map(existing -> {
+                    documentMapper.updateDocumentFromDto(dto, existing);
+                    return documentRepository.save(existing);
+                });
     }
 
     @Transactional

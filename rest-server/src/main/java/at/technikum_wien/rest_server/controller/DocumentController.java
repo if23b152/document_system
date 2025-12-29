@@ -1,7 +1,12 @@
 package at.technikum_wien.rest_server.controller;
 
+import at.technikum_wien.rest_server.mapper.DocumentMapper;
+import at.technikum_wien.rest_server.model.CreateDocumentRequest;
 import at.technikum_wien.rest_server.model.Document;
+import at.technikum_wien.rest_server.model.DocumentResponse;
+import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
 import at.technikum_wien.rest_server.service.DocumentService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +20,21 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final DocumentMapper documentMapper; // inject mapper
 
     @Autowired
-    public DocumentController(DocumentService documentService) {
+    public DocumentController(DocumentService documentService, DocumentMapper documentMapper) {
         this.documentService = documentService;
+        this.documentMapper = documentMapper;
     }
 
     // === POST ===
     @PostMapping("/upload")
-    public ResponseEntity<Document> uploadDocument(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<DocumentResponse> uploadDocument(
+            @Valid @ModelAttribute CreateDocumentRequest request) {
+
+        MultipartFile file = request.getFile();
+
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -33,7 +44,7 @@ public class DocumentController {
         }
 
         try {
-            // Upload to MinIO and get object key
+            // Upload to MinIO and get the object key
             String objectKey = documentService.uploadToMinio(file);
 
             // Save metadata in DB (includes MinIO object key)
@@ -43,7 +54,10 @@ public class DocumentController {
                     objectKey
             );
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+            // Map to response DTO
+            DocumentResponse response = documentMapper.toResponse(saved);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -52,24 +66,31 @@ public class DocumentController {
 
     // === GET ALL ===
     @GetMapping
-    public ResponseEntity<List<Document>> getAllDocuments() {
+    public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
         List<Document> documents = documentService.getAllDocuments();
-        return ResponseEntity.ok(documents);
+        List<DocumentResponse> response = documents.stream()
+                .map(documentMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(response);
     }
 
     // === GET BY ID ===
     @GetMapping("/{id}")
-    public ResponseEntity<Document> getDocumentById(@PathVariable Long id) {
+    public ResponseEntity<DocumentResponse> getDocumentById(@PathVariable Long id) {
         return documentService.getDocumentById(id)
+                .map(documentMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     // === UPDATE (PUT) ===
     @PutMapping("/{id}")
-    public ResponseEntity<Document> updateDocument(@PathVariable Long id,
-                                                   @RequestBody Document updatedDocument) {
-        return documentService.updateDocument(id, updatedDocument)
+    public ResponseEntity<DocumentResponse> updateDocument(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateDocumentRequest dto) {
+
+        return documentService.updateDocument(id, dto)
+                .map(documentMapper::toResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

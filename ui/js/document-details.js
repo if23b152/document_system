@@ -14,34 +14,35 @@ function formatTimestamp(ts) {
 let originalDoc = null;
 
 // Load and display document details from the backend
+// Load and display document details from the backend
 async function loadDetail() {
-    const id = getIdFromUrl(); // get document ID from URL
+    const id = getIdFromUrl();
 
     try {
-        // Fetch document details from backend REST API
         const res = await fetch(`/api/documents/${id}`);
         if (!res.ok) {
             alert("Document was not found!");
             return;
         }
 
-        const doc = await res.json(); // parse JSON response
-        originalDoc = doc; // save for later use (resetting form)
+        const doc = await res.json();
+        originalDoc = doc;
 
-        // Extract fields from the document
         const { fileName, fileSize, uploadTimestamp, summary, tags } = doc;
 
-        // Populate read-only inputs in the details column
+        // FIX: 'tags' is now an array from the backend.
+        // We join it with a comma and space for the UI.
+        const tagsString = (tags && tags.length > 0) ? tags.join(", ") : "";
+
         document.getElementById("detailFileName").value = fileName || "";
         document.getElementById("detailFileSize").value = fileSize ? `${fileSize} bytes` : "";
         document.getElementById("detailUploadedOn").value = uploadTimestamp ? formatTimestamp(uploadTimestamp) : "";
-        document.getElementById("detailTags").value = tags || "(none)";
+        document.getElementById("detailTags").value = tagsString || "(none)";
         document.getElementById("detailSummary").value = summary || "(not yet created)";
 
-        // Pre-fill the edit form with existing values
         document.getElementById("fileNameInput").value = fileName || "";
         document.getElementById("summaryInput").value = summary || "";
-        document.getElementById("tagsInput").value = tags || "";
+        document.getElementById("tagsInput").value = tagsString; // Pre-fill with joined string
 
     } catch (err) {
         console.error("Error loading document:", err);
@@ -51,25 +52,30 @@ async function loadDetail() {
 
 // Handle form submission to update a document (PUT request)
 async function handleUpdate(event) {
-    event.preventDefault(); // stop form from refreshing the page
+    event.preventDefault();
     const id = getIdFromUrl();
 
     let fileName = document.getElementById("fileNameInput").value.trim();
-
-    // Make sure the filename always ends with ".pdf"
     if (!fileName.toLowerCase().endsWith(".pdf")) {
         fileName += ".pdf";
     }
 
-    // Gather updated values from the form
+    // FIX: Convert the comma-separated string from the input into an Array
+    const tagsInputValue = document.getElementById("tagsInput").value;
+    const tagsArray = tagsInputValue
+        .split(",")
+        .map(t => t.trim())
+        .filter(t => t !== ""); // Remove empty strings
+
     const updatedDoc = {
         fileName,
         summary: document.getElementById("summaryInput").value,
-        tags: document.getElementById("tagsInput").value
+        tags: tagsArray // Now sending a proper JSON Array: ["tag1", "tag2"]
     };
 
+    console.log("Sending payload:", JSON.stringify(updatedDoc));
+
     try {
-        // Send the PUT request with updated document data
         const res = await fetch(`/api/documents/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -78,9 +84,11 @@ async function handleUpdate(event) {
 
         if (res.ok) {
             alert("Document updated successfully!");
-            await loadDetail(); // reload details to show changes
+            await loadDetail();
         } else {
-            alert("Failed to update document.");
+            const errorData = await res.json().catch(() => ({}));
+            console.error("Server Error:", errorData);
+            alert("Failed to update document: " + (errorData.message || "Check console"));
         }
     } catch (err) {
         console.error("Update failed:", err);
@@ -88,12 +96,13 @@ async function handleUpdate(event) {
     }
 }
 
-// Reset the edit form back to the original document values
+// Reset the edit form
 function handleCancel() {
     if (!originalDoc) return;
     document.getElementById("fileNameInput").value = originalDoc.fileName;
     document.getElementById("summaryInput").value = originalDoc.summary || "";
-    document.getElementById("tagsInput").value = originalDoc.tags || "";
+    // Re-join the array for the cancel reset
+    document.getElementById("tagsInput").value = (originalDoc.tags) ? originalDoc.tags.join(", ") : "";
 }
 
 // Delete the current document by ID
