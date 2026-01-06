@@ -1,71 +1,74 @@
 package at.technikum_wien.rest_server.service;
 
+import at.technikum_wien.rest_server.model.Comment;
 import at.technikum_wien.rest_server.model.Document;
+import at.technikum_wien.rest_server.repository.CommentRepository;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
-/**
- * Unit tests for DocumentService.
- * Repository is mocked → no real database is touched.
- */
-/*
-public class DocumentServiceTest {
-    @Mock
-    private DocumentRepository documentRepository; // fake DB repo
+@ExtendWith(MockitoExtension.class)
+class CommentServiceTest {
 
-    @InjectMocks
-    private DocumentService documentService; // service under test
+    @Mock private CommentRepository commentRepository;
+    @Mock private DocumentRepository documentRepository;
 
-    // Initialize Mockito annotations before each test
-    public DocumentServiceTest() {
-        MockitoAnnotations.openMocks(this);
-    }
+    @InjectMocks private CommentService commentService;
 
     @Test
-    void saveDocument_shouldReturnSavedDocument() {
-        // Arrange → prepare a fake document to return from repository
-        Document mockDoc = new Document();
-        mockDoc.setId(1L);
-        mockDoc.setFileName("test.pdf");
-        mockDoc.setFileSize(12345L);
-        mockDoc.setStoragePath("test.pdf");
-        mockDoc.setUploadTimestamp(LocalDateTime.now());
-
-        // Stub repository save() to always return mockDoc
-        when(documentRepository.save(any(Document.class))).thenReturn(mockDoc);
-
-        // Act → call service method
-        Document saved = documentService.saveDocument("test.pdf", 12345L, "test.pdf");
-
-        // Assert → verify correct values and interactions
-        assertThat(saved.getId()).isEqualTo(1L);
-        assertThat(saved.getFileName()).isEqualTo("test.pdf");
-        verify(documentRepository, times(1)).save(any(Document.class));
-    }
-
-    @Test
-    void getDocumentById_shouldReturnOptional() {
-        // Arrange → prepare fake return value
+    void addComment_Success() {
+        Long docId = 1L;
         Document doc = new Document();
-        doc.setId(99L);
+        doc.setId(docId);
 
-        when(documentRepository.findById(99L)).thenReturn(Optional.of(doc));
+        when(documentRepository.findById(docId)).thenReturn(Optional.of(doc));
+        when(commentRepository.save(any(Comment.class))).thenAnswer(invocation -> {
+            Comment comment = invocation.getArgument(0);
+            comment.setId(99L);
+            return comment;
+        });
 
-        // Act → call service
-        Optional<Document> result = documentService.getDocumentById(99L);
+        Comment saved = commentService.addComment(docId, "Toller Kommentar");
 
-        // Assert → result should contain document
-        assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(99L);
+        assertNotNull(saved);
+        assertEquals("Toller Kommentar", saved.getContent());
+        assertEquals(doc, saved.getDocument());
+        verify(commentRepository, times(1)).save(any());
+        verify(documentRepository, times(1)).findById(docId);
+    }
+
+    @Test
+    void addComment_DocumentNotFound_ThrowsException() {
+        when(documentRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () ->
+                commentService.addComment(99L, "Inhalt")
+        );
+        verify(documentRepository).findById(99L);
+        verify(commentRepository, never()).save(any());
+    }
+
+    @Test
+    void getCommentsForDocument_ShouldCallRepository() {
+        commentService.getCommentsForDocument(1L);
+        verify(commentRepository).findByDocumentId(1L);
+    }
+
+    @Test
+    void deleteComment_ShouldCallRepository() {
+        commentService.deleteComment(10L);
+        verify(commentRepository).deleteById(10L);
     }
 }
-*/
