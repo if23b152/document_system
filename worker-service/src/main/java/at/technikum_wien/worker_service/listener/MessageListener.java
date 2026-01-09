@@ -7,8 +7,7 @@ import at.technikum_wien.worker_service.service.DocumentProcessingService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-
-// Marks this class as a Spring-managed component so it can be auto-detected and used
+// Marks this class as a Spring-managed component, so it can be auto-detected and used
 @Component
 public class MessageListener {
 

@@ -2,8 +2,6 @@ package at.technikum_wien.rest_server.model;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class DocumentTest {

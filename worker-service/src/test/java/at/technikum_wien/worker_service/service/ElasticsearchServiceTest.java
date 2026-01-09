@@ -1,40 +1,73 @@
 package at.technikum_wien.worker_service.service;
 
 import at.technikum_wien.worker_service.model.SearchDocument;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
-import org.junit.jupiter.api.extension.ExtendWith;
+public class ElasticsearchServiceTest {
 
-@ExtendWith(MockitoExtension.class)
-class ElasticsearchServiceTest {
-
-    @Mock
+    // This is the Elasticsearch client that will be mocked
     private ElasticsearchOperations elasticsearchOperations;
 
-    @InjectMocks
+    // This is the class under test
     private ElasticsearchService elasticsearchService;
 
+    @BeforeEach
+    void setUp() {
+        // Create a mock for ElasticsearchOperations
+        elasticsearchOperations = mock(ElasticsearchOperations.class);
+
+        // Create the service with the mocked dependency
+        elasticsearchService = new ElasticsearchService(elasticsearchOperations);
+    }
+
+    // When indexing succeeds → save() is called once
     @Test
-    void indexDocument_shouldSaveDocumentToElasticsearch() {
-        // Arrange
+    void indexDocument_success_callsSave() {
+        // Create a fake search document
         SearchDocument document = new SearchDocument(
                 1L,
-                "HelloWorld.pdf",
-                "Hello World OCR text",
-                "Hello World summary"
+                "file.pdf",
+                "some ocr text",
+                "some summary"
         );
 
-        // Act
+        // Call the method under test
         elasticsearchService.indexDocument(document);
 
-        // Assert
+        // Verify that Elasticsearch save() was called exactly once with this document
         verify(elasticsearchOperations, times(1)).save(document);
+
+        // Verify that no other Elasticsearch calls were made
+        verifyNoMoreInteractions(elasticsearchOperations);
+    }
+
+    // When Elasticsearch throws → exception is swallowed
+    @Test
+    void indexDocument_failure_doesNotThrow() {
+        // Create a fake search document
+        SearchDocument document = new SearchDocument(
+                2L,
+                "broken.pdf",
+                "text",
+                "summary"
+        );
+
+        // Mock Elasticsearch to throw an exception
+        doThrow(new RuntimeException("Elasticsearch down"))
+                .when(elasticsearchOperations)
+                .save(document);
+
+        // Call the method under test and verify that NO exception escapes
+        elasticsearchService.indexDocument(document);
+
+        // Verify that save() was still attempted
+        verify(elasticsearchOperations, times(1)).save(document);
+
+        // Verify that no other Elasticsearch calls were made
+        verifyNoMoreInteractions(elasticsearchOperations);
     }
 }
