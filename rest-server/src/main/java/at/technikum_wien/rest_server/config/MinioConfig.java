@@ -9,18 +9,19 @@ import org.springframework.context.annotation.Configuration;
  * Configuration class for MinIO client setup.
  * Reads connection details from application.properties.
  */
-@Configuration
+@Configuration // Marks this class as a Spring configuration
 public class MinioConfig {
 
-    @Value("${minio.url}")
+    @Value("${minio.url}") // MinIO server URL
     private String minioUrl;
 
-    @Value("${minio.access-key}")
+    @Value("${minio.access-key}") // Access key for authentication
     private String accessKey;
 
-    @Value("${minio.secret-key}")
+    @Value("${minio.secret-key}") // Secret key for authentication
     private String secretKey;
 
+    // Creates and exposes MinioClient as a Spring Bean
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()

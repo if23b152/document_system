@@ -8,28 +8,31 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/comments")
+@RestController // REST controller for comment-related endpoints
+@RequestMapping("/api/comments") // Base path for all comment APIs
 public class CommentController {
 
-    private final CommentService commentService;
+    private final CommentService commentService; // Business logic for comments
 
-    @Autowired
+    @Autowired // Constructor injection
     public CommentController(CommentService commentService) {
         this.commentService = commentService;
     }
 
-    // === Add comment to document ===
+    // === POST: Add a new comment to a document ===
     @PostMapping("/document/{documentId}")
     public ResponseEntity<Comment> addComment(
             @PathVariable Long documentId,
             @RequestBody String content) {
 
+        // Create and persist new comment
         Comment saved = commentService.addComment(documentId, content);
+
+        // Return saved comment
         return ResponseEntity.ok(saved);
     }
 
-    // === Get comments for document ===
+    // === GET: Retrieve all comments for a document ===
     @GetMapping("/document/{documentId}")
     public ResponseEntity<List<Comment>> getComments(@PathVariable Long documentId) {
         return ResponseEntity.ok(
@@ -37,10 +40,14 @@ public class CommentController {
         );
     }
 
-    // === Delete comment ===
+    // === DELETE: Remove a comment by its ID ===
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
+
+        // Delete comment from database
         commentService.deleteComment(commentId);
+
+        // Return 204 No Content
         return ResponseEntity.noContent().build();
     }
 }

@@ -9,19 +9,19 @@ This is the frontend of our project and once you are done using our Document Man
 the IntelliJ terminal and run the following command:
 docker-compose down
 
-To take a look at the table in the database
-docker exec -it dms-postgres psql -U postgres
-After running this, you should see a prompt like:
-postgres=#
-This means you are now inside the PostgreSQL CLI.
-\c documentdb
-\d documents
+To take a look at the table in the database:
+docker exec -it dms-postgres bash
+psql -U postgres -d documentdb
+List all tables: \dt
+SELECT * FROM documents;
 
 Link to GitHub repository:
 https://github.com/if23b196/Document-Management-System.git
 
 To get project structure without some unnecessary files:
 Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch '\\.git\\|\\.idea\\|\\target\\|\\test\\' } | Select-Object -ExpandProperty FullName
+
+
 
 Workflow with Git:
 Git Branch Workflow

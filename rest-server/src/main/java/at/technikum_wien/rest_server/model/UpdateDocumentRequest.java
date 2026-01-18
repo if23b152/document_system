@@ -13,18 +13,14 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateDocumentRequest {
 
+    // New file name (must not be empty)
     @NotBlank(message = "File name cannot be blank")
     private String fileName;
 
-    private String summary; // optional
+    // Manually edited or AI-generated summary
+    private String summary;
 
-    /*
-    The problem was a data type mismatch where the frontend sent a plain JSON string (e.g., "hello") for the tags, but
-    the backend expected a JSON array (["hello"]), causing Jackson to fail during deserialization. We solved it by using
-     the @JsonFormat annotation to allow single-value-as-array conversion, which instructs Spring to automatically wrap
-     a single string into a list if necessary.
-     */
-    // This is the magic fix for the "Cannot construct instance of ArrayList" error
+    // List of tags (accepts either single value or array in JSON)
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     private List<String> tags;
 }

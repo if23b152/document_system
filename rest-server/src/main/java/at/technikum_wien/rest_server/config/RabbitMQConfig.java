@@ -9,39 +9,47 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 /**
  * Configuration class for RabbitMQ.
- * Defines the Queue, Exchange, and the Binding between them.
- * This ensures the messaging infrastructure is set up when the producer service starts.
+ * Defines the Queues, Exchange, and the Bindings between them.
+ * This ensures the messaging infrastructure is created automatically at startup.
  */
-@Configuration
+@Configuration // Marks this as a Spring configuration class
 public class RabbitMQConfig {
 
-    // --- Existing OCR inbound queue for worker requests ---
+    // --- Queue for sending OCR processing requests to the worker ---
     public static final String OCR_QUEUE = "ocr-queue";
+
+    // --- Shared exchange used by all services ---
     public static final String EXCHANGE_NAME = "dms-exchange";
+
+    // --- Routing key for OCR processing requests ---
     public static final String OCR_ROUTING_KEY = "ocr.process";
 
-    // --- NEW: Queue for results returning from the worker ---
+    // --- Queue for receiving processing results from workers ---
     public static final String RESULT_QUEUE = "result-queue";
+
+    // --- Routing key for worker result messages ---
     public static final String RESULT_ROUTING_KEY = "result.process";
 
     // ------------------------------
-    //  OCR Request Queue (existing)
+    // OCR request queue (REST → Worker)
     // ------------------------------
     @Bean
     public Queue ocrQueue() {
+        // Durable queue that survives broker restarts
         return new Queue(OCR_QUEUE, true, false, false);
     }
 
     // ------------------------------
-    //  NEW: Worker Result Queue
+    // Worker result queue (Worker → REST)
     // ------------------------------
     @Bean
     public Queue resultQueue() {
+        // Durable queue for results coming back from workers
         return new Queue(RESULT_QUEUE, true, false, false);
     }
 
     // ------------------------------
-    // Topic Exchange (shared)
+    // Topic exchange (shared by all message types)
     // ------------------------------
     @Bean
     public TopicExchange dmsExchange() {
@@ -49,42 +57,48 @@ public class RabbitMQConfig {
     }
 
     // ------------------------------
-    // Binding: OCR requests
+    // Binding: OCR request messages
     // ------------------------------
     @Bean
     public Binding ocrBinding(Queue ocrQueue, TopicExchange dmsExchange) {
         return BindingBuilder
-                .bind(ocrQueue)
-                .to(dmsExchange)
-                .with(OCR_ROUTING_KEY);
+                .bind(ocrQueue)              // Bind OCR queue
+                .to(dmsExchange)             // To shared exchange
+                .with(OCR_ROUTING_KEY);      // Using OCR routing key
     }
 
     // ------------------------------
-    // NEW Binding: Worker results
+    // Binding: Worker result messages
     // ------------------------------
     @Bean
     public Binding resultBinding(Queue resultQueue, TopicExchange dmsExchange) {
         return BindingBuilder
-                .bind(resultQueue)
-                .to(dmsExchange)
-                .with(RESULT_ROUTING_KEY);
+                .bind(resultQueue)           // Bind result queue
+                .to(dmsExchange)             // To shared exchange
+                .with(RESULT_ROUTING_KEY);   // Using result routing key
     }
 
     // ------------------------------
-    // JSON converter for messages
+    // JSON converter for message serialization
     // ------------------------------
     @Bean
     public Jackson2JsonMessageConverter jsonMessageConverter() {
+        // Automatically converts Java objects ↔ JSON in RabbitMQ messages
         return new Jackson2JsonMessageConverter();
     }
 
     // ------------------------------
-    // RabbitTemplate with JSON support
+    // RabbitTemplate configured with JSON support
     // ------------------------------
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+
+        // Main Spring helper class for sending messages to RabbitMQ
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
+
+        // Use JSON serialization instead of raw byte arrays
         template.setMessageConverter(jsonMessageConverter());
+
         return template;
     }
 }

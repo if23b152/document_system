@@ -12,42 +12,42 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "documents")
+@Table(name = "documents") // Maps this class to the "documents" table in PostgreSQL
 public class Document {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment primary key
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // Original file name uploaded by the user
     private String fileName;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // Size of the file in bytes
     private long fileSize;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // Timestamp when the file was uploaded
     private LocalDateTime uploadTimestamp;
 
-    // MinIO object key (e.g. "documents/uuid-filename.pdf")
+    // Key used to locate the file inside MinIO (e.g. "documents/uuid-filename.pdf")
     @Column(name = "minio_object_key", nullable = false)
     private String minioObjectKey;
 
-    // Summary generated later (Sprint 5)
-    @Column(columnDefinition = "TEXT")
+    // AI-generated summary of the document (filled in Sprint 5)
+    @Column(columnDefinition = "TEXT") // Stored as TEXT because it can be long
     private String summary;
 
-    // Tags (Sprint 6)
+    // Comma-separated list of tags
     private String tags;
 
+    // Flag to indicate whether OCR has already been performed
     private Boolean ocrProcessed = false;
-    // private Boolean genAiSummarized = false;
 
-    // === NEW: Comments ===
+    // One document can have many user comments
     @OneToMany(
-            mappedBy = "document",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+            mappedBy = "document", // "document" field in Comment owns the relationship
+            cascade = CascadeType.ALL, // Automatically persist/delete comments with the document
+            orphanRemoval = true // Remove comments if they are no longer linked to a document
     )
-    @JsonManagedReference
+    @JsonManagedReference // Prevents infinite JSON recursion when serializing
     private List<Comment> comments = new ArrayList<>();
 }

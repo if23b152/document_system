@@ -10,17 +10,17 @@ import org.mapstruct.MappingTarget;
 import java.util.Arrays;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring") // MapStruct mapper managed as a Spring Bean
 public interface DocumentMapper {
 
-    // 1. Entity -> DTO (Used for GET requests)
+    // 1. Converts Entity -> DTO (used for API responses)
     DocumentResponse toResponse(Document document);
 
-    // 2. DTO -> Entity (Used for UPDATE requests)
+    // 2. Updates existing Entity from DTO (used for UPDATE requests)
     @Mapping(target = "tags", expression = "java(mapListToString(dto.getTags()))")
     void updateDocumentFromDto(UpdateDocumentRequest dto, @MappingTarget Document entity);
 
-    // Helper: String -> List (Entity to DTO)
+    // Helper method: Converts comma-separated String -> List<String> (Entity to DTO)
     default List<String> mapTags(String tags) {
         if (tags == null || tags.isBlank()) return List.of();
         return Arrays.stream(tags.split(","))
@@ -28,7 +28,7 @@ public interface DocumentMapper {
                 .toList();
     }
 
-    // Helper: List -> String (DTO to Entity)
+    // Helper method: Converts List<String> -> comma-separated String (DTO to Entity)
     default String mapListToString(List<String> tags) {
         if (tags == null || tags.isEmpty()) return null;
         return String.join(",", tags);

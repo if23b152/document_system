@@ -11,6 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 public class CreateDocumentRequest {
 
+    // The uploaded file (must not be null)
     @NotNull(message = "File must not be null")
     private MultipartFile file;
 }

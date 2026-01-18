@@ -12,14 +12,14 @@ import org.springframework.stereotype.Service;
 /**
  * Publishes messages to RabbitMQ after a document is saved.
  */
-@Service
+@Service // Marks this class as a Spring service responsible for messaging
 public class DocumentMessageProducer {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentMessageProducer.class);
 
-    private final RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate; // Spring abstraction for RabbitMQ operations
 
-    @Autowired
+    @Autowired // Injects RabbitTemplate configured by Spring
     public DocumentMessageProducer(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
     }
@@ -32,15 +32,19 @@ public class DocumentMessageProducer {
      * @param minioObjectKey The MinIO object key (path in bucket).
      */
     public void sendOcrProcessingRequest(Long documentId, String fileName, String minioObjectKey) throws AmqpException {
+
+        // Create message DTO that will be sent to the OCR worker
         OcrRequestMessage message = new OcrRequestMessage(documentId, fileName, minioObjectKey);
 
         try {
+            // Send message to RabbitMQ exchange with OCR routing key
             rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.OCR_ROUTING_KEY,
-                    message
+                    RabbitMQConfig.EXCHANGE_NAME,  // Target exchange
+                    RabbitMQConfig.OCR_ROUTING_KEY, // Routing key for OCR queue
+                    message                         // Message payload (will be serialized)
             );
 
+            // Log successful message publishing
             log.info("""
                     [PRODUCER SUCCESS] OCR message sent:
                     Exchange: {}
@@ -49,6 +53,7 @@ public class DocumentMessageProducer {
                     """, RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_ROUTING_KEY, message);
 
         } catch (AmqpException e) {
+            // Log and rethrow exception so caller can react appropriately
             log.error("[PRODUCER FAILURE] Failed to send OCR message for document ID {}: {}", documentId, e.getMessage(), e);
             throw e;
         }

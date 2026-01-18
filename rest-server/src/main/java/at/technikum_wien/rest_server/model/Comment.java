@@ -10,22 +10,22 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "comments")
+@Table(name = "comments") // Maps this class to the "comments" table in the database
 public class Comment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-increment primary key
     private Long id;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT") // Comment text content
     private String content;
 
-    @Column(nullable = false)
+    @Column(nullable = false) // Timestamp when the comment was created
     private LocalDateTime createdAt;
 
-    // === Relation to Document ===
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "document_id")
-    @JsonBackReference
+    // Many comments can belong to one document
+    @ManyToOne(optional = false) // Each comment must be linked to a document
+    @JoinColumn(name = "document_id") // Foreign key column in the comments table
+    @JsonBackReference // Prevents infinite JSON recursion when serializing
     private Document document;
 }

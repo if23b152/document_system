@@ -1,41 +1,41 @@
 package at.technikum_wien.rest_server.service;
 
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.GetObjectArgs;
+import io.minio.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.UUID;
 
 /**
- * Service for interacting with MinIO storage.
+ * Service for interacting with MinIO object storage.
  * Handles uploading and downloading of PDF documents.
  */
-@Service
+@Service // Marks this as a Spring service component
 public class MinioService {
 
-    private final MinioClient minioClient;
-    private final String bucketName;
+    private final MinioClient minioClient; // Official MinIO Java client
+    private final String bucketName;       // Bucket where documents are stored
+    private static final Logger log = LoggerFactory.getLogger(MinioService.class);
 
+    // Inject MinIO client and bucket name from configuration
     public MinioService(MinioClient minioClient, @Value("${minio.bucket}") String bucketName) {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
     }
 
     /**
-     * Uploads a document to MinIO storage.
+     * Uploads a document to MinIO object storage.
      *
      * @param file MultipartFile to upload
-     * @return generated object key (to store in DB or send to queue)
+     * @return Generated object key (stored in DB and sent to workers)
      */
     public String uploadDocument(MultipartFile file) {
         try {
-            // Ensure the bucket exists
+            // Ensure that the configured bucket exists
             boolean exists = minioClient.bucketExists(
                     BucketExistsArgs.builder().bucket(bucketName).build()
             );
@@ -43,10 +43,10 @@ public class MinioService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
 
-            // Generate unique object key (UUID + original filename)
+            // Generate a unique object key (UUID + original filename)
             String objectKey = UUID.randomUUID() + "-" + file.getOriginalFilename();
 
-            // Upload file stream
+            // Upload the file stream to MinIO
             try (InputStream is = file.getInputStream()) {
                 minioClient.putObject(
                         PutObjectArgs.builder()
@@ -58,25 +58,30 @@ public class MinioService {
                 );
             }
 
+            // Return object key so it can be stored in DB
             return objectKey;
         } catch (Exception e) {
+            // Wrap any MinIO or IO error into a runtime exception
             throw new RuntimeException("Failed to upload file to MinIO", e);
         }
     }
 
     /**
-     * Downloads a file from MinIO as InputStream (for future use cases).
+     * Deletes a document from MinIO storage.
+     *
+     * @param objectKey The object key of the file to delete
      */
-    public InputStream download(String objectKey) {
+    public void deleteDocument(String objectKey) {
         try {
-            return minioClient.getObject(
-                    GetObjectArgs.builder()
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
                             .bucket(bucketName)
                             .object(objectKey)
                             .build()
             );
+            log.info("Deleted file '{}' from MinIO bucket '{}'.", objectKey, bucketName);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to download file from MinIO", e);
+            throw new RuntimeException("Failed to delete file from MinIO: " + objectKey, e);
         }
     }
 }
