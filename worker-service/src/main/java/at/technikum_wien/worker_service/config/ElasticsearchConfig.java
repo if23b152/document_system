@@ -3,18 +3,26 @@ package at.technikum_wien.worker_service.config;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
+/**
+ * Configuration class for enabling Elasticsearch repositories in the worker service.
+ * The worker uses Elasticsearch to index OCR text and summaries for search.
+ */
 @Configuration
 @EnableElasticsearchRepositories(
         basePackages = "at.technikum_wien.worker_service"
 )
 public class ElasticsearchConfig {
+
     /*
-     * Same configuration as in the REST server.
+     * No manual client configuration is needed here.
      *
-     * The worker service uses Elasticsearch for indexing documents
-     * after OCR and GenAI summary generation.
+     * Spring Boot automatically creates:
+     *  - ElasticsearchClient
+     *  - ElasticsearchOperations
      *
-     * Spring Boot auto-configures the client using:
-     * spring.elasticsearch.uris
+     * based on the property:
+     *  spring.elasticsearch.uris
+     *
+     * This is the same setup as in the REST server.
      */
 }

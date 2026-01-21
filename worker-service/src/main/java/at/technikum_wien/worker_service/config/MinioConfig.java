@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration // Marks this class as a configuration source for Spring (like a setup file)
 public class MinioConfig {
 
-    // The endpoint URL of the MinIO server (e.g. http://minio:9000)
+    // The endpoint URL of the MinIO server (e.g., http://minio:9000)
     // Read from the application.properties file
     @Value("${minio.endpoint}")
     private String endpoint;
@@ -28,7 +28,7 @@ public class MinioConfig {
     /**
      * Creates and configures a MinioClient bean.
      * Spring will automatically make this bean available for injection
-     * wherever a MinioClient is needed (e.g. in MinioService).
+     * wherever a MinioClient is needed (e.g., in MinioService).
      * The MinioClient comes from the official MinIO Java SDK
      * and is used to perform file operations such as upload and download.
      */

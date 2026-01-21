@@ -7,6 +7,10 @@ import at.technikum_wien.worker_service.service.DocumentProcessingService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * RabbitMQ listener that receives OCR requests from the REST server
+ * and forwards them to the processing service.
+ */
 // Marks this class as a Spring-managed component, so it can be auto-detected and used
 @Component
 public class MessageListener {
@@ -17,8 +21,10 @@ public class MessageListener {
         this.documentProcessingService = documentProcessingService;
     }
 
+    // Triggered automatically when a message arrives in the OCR queue
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     public void handleOcrRequest(OcrRequestMessage message) {
+        // Delegate the actual processing to the service layer
         documentProcessingService.processDocument(message);
     }
 }

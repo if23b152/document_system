@@ -9,43 +9,57 @@ import org.springframework.context.annotation.Bean;
 import java.io.File;
 
 /**
- * Configuration class for Tesseract OCR settings.
- * Sets up paths and directories needed for OCR processing in the worker service.
- * In Docker, Tesseract is usually installed inside the container image,
- * so these paths must match the installed location.
+ * Spring configuration class for everything the OCR process needs.
+ * It prepares:
+ *  - The path to Tesseract's language data files
+ *  - A temporary folder where PDFs are stored before OCR runs
  */
-@Configuration // Marks this class as a Spring configuration class
+@Configuration // Tells Spring: this class provides configuration beans
 public class OcrConfig {
 
-    // Logger for printing messages during configuration
+    // Logger for printing configuration-related messages
     private static final Logger log = LoggerFactory.getLogger(OcrConfig.class);
 
-    // Path to the Tesseract "tessdata" directory (contains language training files)
-    // Uses an environment variable TESSDATA_PATH if available, otherwise defaults to /usr/share/tessdata
+    // Path to the folder that contains Tesseract language files (tessdata)
+    // This value is read from an environment variable or application config.
+    // If nothing is set, it defaults to "/usr/share/tessdata" (common in Linux/Docker).
     @Value("${TESSDATA_PATH:/usr/share/tessdata}")
     private String tesseractDataPath;
 
     /**
-     * Provides the Tesseract data path as a Spring bean.
-     * This bean is injected into OcrService so it knows where to find language data.
+     * Exposes the Tesseract data path as a Spring bean.
+     * Other classes (like the OCR engine) can inject this value and know
+     * where Tesseract's language files are located.
      */
-    @Bean // Marks this method as a bean provider
+    @Bean // Registers this return value as a Spring-managed object
     public String tesseractPath() {
-        log.info("Configuring Tesseract data path (Classic Tesseract Path) to: {}", tesseractDataPath);
+        // Log which path is being used
+        log.info("Configuring Tesseract data path to: {}", tesseractDataPath);
+
+        // Return the path so Spring can inject it where needed
         return tesseractDataPath;
     }
 
     /**
-     * Creates a temporary directory for OCR processing.
-     * OCR engine needs a file on disk, so input streams are saved here before processing.
+     * Creates (if necessary) and provides a temporary directory for OCR processing.
+     * The worker first downloads the PDF and saves it to disk,
+     * then Tesseract reads the file from this directory.
      */
-    @Bean
+    @Bean // Makes this directory available as an injectable bean
     public File tempOcrDir() {
-        File tempDir = new File("/tmp/ocr"); // Path inside the container
-        if (!tempDir.exists()) {             // Create directory if it doesn’t exist
+        // Define the folder inside the container where temp files will be stored
+        File tempDir = new File("/tmp/ocr");
+
+        // If the folder does not exist yet, create it
+        if (!tempDir.exists()) {
             boolean created = tempDir.mkdirs();
-            log.info("Created temporary OCR directory: {}", created ? tempDir.getAbsolutePath() : "failed");
+
+            // Log whether creation worked or not
+            log.info("Created temporary OCR directory: {}",
+                    created ? tempDir.getAbsolutePath() : "failed");
         }
-        return tempDir; // Return the directory as a Spring bean
+
+        // Return the folder so other services can use it
+        return tempDir;
     }
 }

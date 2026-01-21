@@ -16,21 +16,29 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * Central orchestration service of the worker.
+ * It processes documents received from RabbitMQ:
+ * download from MinIO → OCR → AI summary → Elasticsearch indexing → send result back.
+ */
 @Service
 public class DocumentProcessingService {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentProcessingService.class);
 
-    private final MinioService minioService;
-    private final OcrService ocrService;
-    private final GenAiService genAiService;
-    private final WorkerResultProducer resultProducer;
-    private final File tempDir;
-    private final ElasticsearchService elasticsearchService;
+    private final MinioService minioService;                 // Downloads files from MinIO
+    private final OcrService ocrService;                     // Performs OCR on PDF files
+    private final GenAiService genAiService;                 // Generates AI summaries from text
+    private final WorkerResultProducer resultProducer;       // Sends results back to the REST server
+    private final File tempDir;                              // Directory for temporary OCR files
+    private final ElasticsearchService elasticsearchService; // Indexes documents for search
 
     @Autowired
-    public DocumentProcessingService(MinioService minioService, OcrService ocrService, GenAiService genAiService,
-                                     WorkerResultProducer resultProducer, ElasticsearchService elasticsearchService,
+    public DocumentProcessingService(MinioService minioService,
+                                     OcrService ocrService,
+                                     GenAiService genAiService,
+                                     WorkerResultProducer resultProducer,
+                                     ElasticsearchService elasticsearchService,
                                      @Qualifier("tempOcrDir") File tempDir) {
         this.minioService = minioService;
         this.ocrService = ocrService;
@@ -40,16 +48,19 @@ public class DocumentProcessingService {
         this.tempDir = tempDir;
     }
 
+    // Main entry point for processing a document received from the queue
     public void processDocument(OcrRequestMessage message) {
-        File tempFile = null;
-        Long documentId = message.getDocumentId();
-        ResultMessage finalResult = null; // Prepare a final result object
+        File tempFile = null;                       // Temporary local copy of the PDF
+        Long documentId = message.getDocumentId();  // ID of the document being processed
+        ResultMessage finalResult = null;           // Final result sent back to REST server
 
         try (InputStream pdfStream = minioService.downloadFile(message.getMinioObjectKey())) {
 
+            // Create a temporary file to store the downloaded PDF
             tempFile = File.createTempFile("ocr_", ".pdf", tempDir);
             Files.copy(pdfStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
+            // Run OCR on the PDF file
             OcrResult ocrResult = ocrService.performOcr(documentId, tempFile);
 
             if (ocrResult.isSuccess()) {
@@ -57,54 +68,69 @@ public class DocumentProcessingService {
 
                 String summary;
                 try {
-                    // --- Sprint 5: Call GenAI Service ---
+                    // Generate AI summary from extracted text
                     summary = genAiService.generateSummary(ocrResult.getText());
-                    log.info("GenAI summary generated for document {}. Summary length: {} characters.", documentId,
-                            summary.length());
+                    log.info("GenAI summary generated for document {}. Summary length: {} characters.",
+                            documentId, summary.length());
 
-                    // Full Success Path
+                    // Build success result (OCR + summary)
                     finalResult = new ResultMessage(documentId, ocrResult.getText(), summary, true, null);
 
-                    // --- Sprint 6: Index document in Elasticsearch ---
-                    elasticsearchService.indexDocument(new SearchDocument(documentId, message.getFileName(),
-                            ocrResult.getText(), summary));
+                    // Index the document in Elasticsearch for search
+                    elasticsearchService.indexDocument(
+                            new SearchDocument(documentId, message.getFileName(),
+                                    ocrResult.getText(), summary)
+                    );
 
                 } catch (Exception genAiException) {
-                    // GenAI Failure Path (OCR was successful, but summary failed)
-                    log.error("GenAI summary generation failed for document {}: {}", documentId,
-                            genAiException.getMessage(), genAiException);
-                    finalResult = new ResultMessage(documentId, ocrResult.getText(),
-                            null, // Summary is null
-                            false, "GenAI failed: " + genAiException.getMessage()
+                    // Case: OCR succeeded, but summary generation failed
+                    log.error("GenAI summary generation failed for document {}: {}",
+                            documentId, genAiException.getMessage(), genAiException);
+
+                    finalResult = new ResultMessage(
+                            documentId,
+                            ocrResult.getText(),   // OCR text is available
+                            null,                  // Summary is missing
+                            false,
+                            "GenAI failed: " + genAiException.getMessage()
                     );
                 }
 
             } else {
-                // OCR Failure Path
+                // Case: OCR itself failed
                 log.error("OCR failed for document {}: {}", documentId, ocrResult.getError());
-                finalResult = new ResultMessage(documentId,
-                        null, // Text is null
-                        null, // Summary is null
-                        false, "OCR failed: " + ocrResult.getError()
+
+                finalResult = new ResultMessage(
+                        documentId,
+                        null,   // No OCR text
+                        null,   // No summary
+                        false,
+                        "OCR failed: " + ocrResult.getError()
                 );
             }
 
         } catch (Exception e) {
-            // General Failure Path (e.g., MinIO download, file I/O)
-            log.error("Failed to process document {} due to an unexpected error: {}", documentId, e.getMessage(), e);
-            finalResult = new ResultMessage(documentId, null, null, false,
+            // Case: MinIO download, file I/O, or unexpected failure
+            log.error("Failed to process document {} due to an unexpected error: {}",
+                    documentId, e.getMessage(), e);
+
+            finalResult = new ResultMessage(
+                    documentId,
+                    null,
+                    null,
+                    false,
                     "Worker processing failed: " + e.getMessage()
             );
 
         } finally {
-            // --- Sprint 5: Send the final result back to REST server ---
+            // Always send the result back to the REST server (success or failure)
             if (finalResult != null) {
                 resultProducer.sendResult(finalResult);
                 log.info("Final result message sent to REST server for document {}. Success: {}.",
                         documentId, finalResult.isSuccess());
             }
 
-            // Cleanup
+            // Delete the temporary file from the disk
             if (tempFile != null && tempFile.exists()) {
                 boolean deleted = tempFile.delete();
                 if (!deleted) {
