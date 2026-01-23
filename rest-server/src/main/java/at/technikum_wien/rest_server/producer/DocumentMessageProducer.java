@@ -49,8 +49,13 @@ public class DocumentMessageProducer {
                     [PRODUCER SUCCESS] OCR message sent:
                     Exchange: {}
                     RoutingKey: {}
-                    Payload: {}
-                    """, RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_ROUTING_KEY, message);
+                    documentId: {}
+                    minioObjectKey: {}
+                    """,
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.OCR_ROUTING_KEY,
+                    documentId,
+                    minioObjectKey);
 
         } catch (AmqpException e) {
             // Log and rethrow exception so caller can react appropriately

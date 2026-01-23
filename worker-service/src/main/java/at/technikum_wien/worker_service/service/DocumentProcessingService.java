@@ -54,6 +54,9 @@ public class DocumentProcessingService {
         Long documentId = message.getDocumentId();  // ID of the document being processed
         ResultMessage finalResult = null;           // Final result sent back to REST server
 
+        log.info("Starting processing for document {} (minioObjectKey={})",
+                documentId, message.getMinioObjectKey());
+
         try (InputStream pdfStream = minioService.downloadFile(message.getMinioObjectKey())) {
 
             // Create a temporary file to store the downloaded PDF

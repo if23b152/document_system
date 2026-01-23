@@ -16,7 +16,7 @@ public class ResultMessage {
     private Long documentId;
 
     // Full OCR-extracted text (optional, can be used for indexing)
-    private String extractedText;
+    private String text;
 
     // AI-generated summary
     private String summary;

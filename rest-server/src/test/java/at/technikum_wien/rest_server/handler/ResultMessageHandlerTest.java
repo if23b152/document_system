@@ -19,56 +19,60 @@ public class ResultMessageHandlerTest {
     }
 
     // =====================================
-    // SUCCESS CASE → calls saveSummary
+    // SUCCESS CASE - calls saveOcrResult
     // =====================================
     @Test
-    void process_success_callsSaveSummary() {
+    void process_success_callsSaveOcrResult() {
         ResultMessage msg = new ResultMessage();
         msg.setDocumentId(1L);
         msg.setSuccess(true);
+        msg.setText("OCR text");
         msg.setSummary("Summary text");
 
         handler.process(msg);
 
         verify(documentService, times(1))
-                .saveSummary(1L, "Summary text");
+                .saveOcrResult(1L, "OCR text", "Summary text", true, null);
         verifyNoMoreInteractions(documentService);
     }
 
     // =====================================
-    // FAILURE CASE → calls markProcessingFailed
+    // FAILURE CASE - calls saveOcrResult
     // =====================================
     @Test
-    void process_failure_callsMarkProcessingFailed() {
+    void process_failure_callsSaveOcrResult() {
         ResultMessage msg = new ResultMessage();
         msg.setDocumentId(2L);
         msg.setSuccess(false);
         msg.setError("OCR failed");
+        msg.setText(null);
+        msg.setSummary(null);
 
         handler.process(msg);
 
         verify(documentService, times(1))
-                .markProcessingFailed(2L, "OCR failed");
+                .saveOcrResult(2L, null, null, false, "OCR failed");
         verifyNoMoreInteractions(documentService);
     }
 
     // =====================================
-    // EXCEPTION CASE → saveSummary throws
+    // EXCEPTION CASE - saveOcrResult throws
     // =====================================
     @Test
-    void process_saveSummaryThrows_logsError() {
+    void process_saveOcrResultThrows_logsError() {
         ResultMessage msg = new ResultMessage();
         msg.setDocumentId(3L);
         msg.setSuccess(true);
+        msg.setText("OCR text");
         msg.setSummary("Text");
 
         doThrow(new RuntimeException("DB down"))
-                .when(documentService).saveSummary(3L, "Text");
+                .when(documentService).saveOcrResult(3L, "OCR text", "Text", true, null);
 
         handler.process(msg);
 
         verify(documentService, times(1))
-                .saveSummary(3L, "Text");
+                .saveOcrResult(3L, "OCR text", "Text", true, null);
 
         // No exception should escape
         verifyNoMoreInteractions(documentService);

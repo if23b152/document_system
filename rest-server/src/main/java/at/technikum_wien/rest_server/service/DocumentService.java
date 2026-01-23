@@ -72,6 +72,8 @@ public class DocumentService {
         document.setMinioObjectKey(objectKey);
         document.setUploadTimestamp(LocalDateTime.now());
         document.setOcrProcessed(false); // OCR not done yet
+        document.setOcrText(null);
+        document.setOcrError(null);
 
         // Persist document metadata in the database
         Document savedDocument = documentRepository.save(document);
@@ -106,6 +108,7 @@ public class DocumentService {
 
         // Reset processing flag
         doc.setOcrProcessed(false);
+        doc.setOcrError(errorMessage);
 
         // Save updated state
         documentRepository.save(doc);
@@ -118,17 +121,20 @@ public class DocumentService {
     // -------------------------------
 
     /**
-     * Saves the AI-generated summary and marks OCR as completed.
+     * Saves OCR text, summary, and processing state.
      */
     @Transactional
-    public void saveSummary(Long documentId, String summary) {
+    public void saveOcrResult(Long documentId, String ocrText, String summary, boolean success, String errorMessage) {
 
         // Load document or fail
         Document doc = documentRepository.findById(documentId)
                 .orElseThrow(() -> new IllegalArgumentException("Document not found: " + documentId));
 
-        // Mark OCR as successfully completed
-        doc.setOcrProcessed(true);
+        // Mark OCR as completed if we have text
+        boolean hasText = ocrText != null && !ocrText.isBlank();
+        doc.setOcrProcessed(hasText);
+        doc.setOcrText(ocrText);
+        doc.setOcrError(errorMessage);
 
         // Store summary if available
         if (summary != null) {
@@ -138,7 +144,11 @@ public class DocumentService {
         // Persist changes
         documentRepository.save(doc);
 
-        log.info("Document {} successfully updated with summary.", documentId);
+        log.info("Document {} updated with OCR text (len={}) and summary (len={}). Success: {}",
+                documentId,
+                ocrText != null ? ocrText.length() : 0,
+                summary != null ? summary.length() : 0,
+                success);
     }
 
     // === Simple CRUD methods ===

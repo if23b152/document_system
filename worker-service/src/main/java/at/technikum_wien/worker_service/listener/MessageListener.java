@@ -4,6 +4,8 @@ import at.technikum_wien.worker_service.config.RabbitMQConfig;
 import at.technikum_wien.worker_service.model.OcrRequestMessage;
 
 import at.technikum_wien.worker_service.service.DocumentProcessingService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageListener {
 
+    private static final Logger log = LoggerFactory.getLogger(MessageListener.class);
+
     private final DocumentProcessingService documentProcessingService;
 
     public MessageListener(DocumentProcessingService documentProcessingService) {
@@ -24,6 +28,8 @@ public class MessageListener {
     // Triggered automatically when a message arrives in the OCR queue
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     public void handleOcrRequest(OcrRequestMessage message) {
+        log.info("Received OCR request: documentId={} minioObjectKey={}",
+                message.getDocumentId(), message.getMinioObjectKey());
         // Delegate the actual processing to the service layer
         documentProcessingService.processDocument(message);
     }

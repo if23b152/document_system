@@ -23,8 +23,9 @@ public class ResultMessageListener {
     @RabbitListener(queues = "result-queue")
     public void handleWorkerResult(ResultMessage message) {
         // Log receipt of worker result
-        log.info("Received worker result for document {}. Success: {}",
-                message.getDocumentId(), message.isSuccess());
+        int textLength = message.getText() != null ? message.getText().length() : 0;
+        log.info("Received worker result for document {}. Success: {} | textLength={}",
+                message.getDocumentId(), message.isSuccess(), textLength);
 
         // Delegate to handler for business logic
         resultMessageHandler.process(message);

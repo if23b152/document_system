@@ -39,9 +39,11 @@ public class WorkerResultProducer {
             );
 
             // Log success
-            log.info("=== [WORKER RESULT SENT] Document {} | success: {} ===",
+            int textLength = message.getText() != null ? message.getText().length() : 0;
+            log.info("=== [WORKER RESULT SENT] Document {} | success: {} | textLength: {} ===",
                     message.getDocumentId(),
-                    message.isSuccess()
+                    message.isSuccess(),
+                    textLength
             );
 
         } catch (AmqpException e) {

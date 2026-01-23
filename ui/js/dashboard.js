@@ -1,7 +1,64 @@
 // Wait until the DOM (HTML elements) is fully loaded before running the script
 window.addEventListener('DOMContentLoaded', async () => {
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const savedTheme = localStorage.getItem("dms-theme");
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        if (themeToggleBtn) themeToggleBtn.textContent = "Light Mode";
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            localStorage.setItem("dms-theme", isDark ? "dark" : "light");
+            themeToggleBtn.textContent = isDark ? "Light Mode" : "Dark Mode";
+        });
+    }
+
     // Reference to the <ul> element where documents will be listed
     const ul = document.getElementById('docs');
+    let retryTimer = null;
+
+    const pdfPreview = document.getElementById("pdfPreview");
+    const pdfPlaceholder = document.getElementById("pdfPlaceholder");
+    const docCount = document.getElementById("docCount");
+    let selectedDocumentId = null;
+
+    function showPdf(id) {
+        if (!pdfPreview) return;
+        selectedDocumentId = id;
+        pdfPreview.src = `/api/documents/${id}/file`;
+        if (pdfPlaceholder) {
+            pdfPlaceholder.style.display = "none";
+        }
+    }
+
+    async function deleteDocument(id) {
+        if (!confirm("Möchtest du dieses Dokument wirklich löschen?")) {
+            return;
+        }
+        try {
+            const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+            if (!res.ok) {
+                alert("Löschen fehlgeschlagen.");
+                return;
+            }
+            if (selectedDocumentId === id) {
+                selectedDocumentId = null;
+                if (pdfPreview) {
+                    pdfPreview.src = "";
+                }
+                if (pdfPlaceholder) {
+                    pdfPlaceholder.style.display = "flex";
+                }
+            }
+            await fetchDocs();
+        } catch (error) {
+            console.error("Delete failed:", error);
+            alert("Löschen fehlgeschlagen.");
+        }
+    }
 
     // Function to fetch documents from the backend and display them
     // Accepts an optional "query" parameter to filter the list of documents by name
@@ -11,32 +68,88 @@ window.addEventListener('DOMContentLoaded', async () => {
             ? `/api/documents/search?query=${encodeURIComponent(query)}`
             : '/api/documents';
 
-        const res = await fetch(url);
+        try {
+            const res = await fetch(url);
+            if (!res.ok) {
+                throw new Error(`Request failed: ${res.status}`);
+            }
 
-        const docs = await res.json(); // Convert the response to JSON (JavaScript objects)
+            const docs = await res.json(); // Convert the response to JSON (JavaScript objects)
 
-        ul.innerHTML = ""; // Clear out any existing document list items
+            ul.innerHTML = ""; // Clear out any existing document list items
+            if (docCount) {
+                docCount.textContent = docs.length.toString();
+            }
 
-        // Filter the document list based on the search query (case-insensitive)
-        docs
-            // For each document, create a <li> element and append it to the <ul>
-            .forEach(doc => {
-                // Destructure properties from the document object
-                const {fileName, fileSize, id} = doc;
+            // Filter the document list based on the search query (case-insensitive)
+            docs
+                // For each document, create a <li> element and append it to the <ul>
+                .forEach(doc => {
+                    // Destructure properties from the document object
+                    const {fileName, fileSize, id} = doc;
 
-                // Create a new list item
-                const li = document.createElement('li');
-                // Show filename and file size in the list item
-                li.textContent = `${fileName} (${fileSize} bytes)`;
+                    // Create a new list item
+                    const li = document.createElement('li');
+                    li.className = "list-group-item doc-item";
 
-                // Add a CSS class to make the list item look clickable
-                li.classList.add('clickable-doc');
-                // Add an event listener, so clicking a list item navigates to the details page
-                li.addEventListener('click', () => viewDetails(id));
+                    const info = document.createElement("div");
+                    info.className = "doc-info";
+                    info.innerHTML = `
+                        <div class="fw-bold">${fileName}</div>
+                        <div class="text-muted small">${fileSize} bytes</div>
+                    `;
 
-                // Add the list item to the <ul>
-                ul.appendChild(li);
-            });
+                    const actions = document.createElement("div");
+                    actions.className = "doc-actions";
+
+                    const viewBtn = document.createElement("button");
+                    viewBtn.type = "button";
+                    viewBtn.className = "btn btn-sm btn-outline-primary";
+                    viewBtn.textContent = "View";
+                    viewBtn.addEventListener("click", () => showPdf(id));
+
+                    const detailsBtn = document.createElement("button");
+                    detailsBtn.type = "button";
+                    detailsBtn.className = "btn btn-sm btn-outline-secondary";
+                    detailsBtn.textContent = "Details";
+                    detailsBtn.addEventListener("click", () => viewDetails(id));
+
+                    const readBtn = document.createElement("a");
+                    readBtn.className = "btn btn-sm btn-primary";
+                    readBtn.href = `document-reader.html?id=${id}`;
+                    readBtn.textContent = "Read";
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.type = "button";
+                    deleteBtn.className = "btn btn-sm btn-danger";
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.addEventListener("click", () => deleteDocument(id));
+
+                    actions.append(viewBtn, detailsBtn, readBtn, deleteBtn);
+                    li.append(info, actions);
+
+                    // Add the list item to the <ul>
+                    ul.appendChild(li);
+                });
+
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+                retryTimer = null;
+            }
+        } catch (error) {
+            console.warn("Document list fetch failed, retrying...", error);
+            ul.innerHTML = "";
+            const li = document.createElement("li");
+            li.className = "list-group-item text-muted";
+            li.textContent = "Server startet... liste wird geladen.";
+            ul.appendChild(li);
+            if (docCount) {
+                docCount.textContent = "0";
+            }
+            if (!retryTimer) {
+                retryTimer = setTimeout(() => fetchDocs(query), 2000);
+            }
+        }
     }
 
     // Function to navigate to the details page of a document

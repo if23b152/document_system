@@ -27,15 +27,32 @@ public class ResultMessageHandler {
             log.error("Worker-service reported failure for document {}: {}",
                     documentId, message.getError());
 
-            // Mark the document as failed in DB (for retry or alert)
-            documentService.markProcessingFailed(documentId, message.getError());
+            // Save OCR result state and error (if any text exists, still persist it)
+            documentService.saveOcrResult(
+                    documentId,
+                    message.getText(),
+                    message.getSummary(),
+                    false,
+                    message.getError()
+            );
+            int textLength = message.getText() != null ? message.getText().length() : 0;
+            log.info("Stored failed OCR result for document {} (textLength={}).",
+                    documentId, textLength);
             return;
         }
 
         try {
-            // Save AI-generated summary and mark OCR as processed
-            documentService.saveSummary(documentId, message.getSummary());
-            log.info("Successfully updated document {} with OCR + summary.", documentId);
+            // Save OCR text + summary and mark OCR as processed
+            documentService.saveOcrResult(
+                    documentId,
+                    message.getText(),
+                    message.getSummary(),
+                    true,
+                    null
+            );
+            int textLength = message.getText() != null ? message.getText().length() : 0;
+            log.info("Successfully updated document {} with OCR + summary. textLength={}",
+                    documentId, textLength);
 
         } catch (Exception e) {
             // Log any unexpected error during DB update

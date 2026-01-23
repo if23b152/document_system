@@ -36,6 +36,15 @@ public class Document {
     @Column(columnDefinition = "TEXT") // Stored as TEXT because it can be long
     private String summary;
 
+    // OCR-extracted text (used by reader and search)
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String ocrText;
+
+    // Error details if OCR/processing failed
+    @Column(columnDefinition = "TEXT")
+    private String ocrError;
+
     // Comma-separated list of tags
     private String tags;
 

@@ -69,6 +69,12 @@ The `ui` module provides the frontend interface for interacting with documents i
     - Displays a list of all comments with timestamps.
     - Supports posting new comments via the backend API.
 
+4. **Document Reader (PDF + RSVP)**
+    - Open PDFs directly in the browser from the document list or details page.
+    - Split view with an RSVP speed-reading panel and embedded PDF viewer.
+    - Controls for start/pause, reset, step back/forward, and WPM speed slider.
+    - Reading position and WPM are saved per document in localStorage.
+
 ### Technical Details
 
 - **AJAX / Fetch API** is used to asynchronously interact with the REST server:
@@ -76,6 +82,8 @@ The `ui` module provides the frontend interface for interacting with documents i
     - Fetch single document details (`GET /api/documents/{id}`)
     - Update document metadata (`PUT /api/documents/{id}`)
     - Delete documents (`DELETE /api/documents/{id}`)
+    - Stream PDFs (`GET /api/documents/{id}/file`)
+    - Fetch OCR text for the reader (`GET /api/documents/{id}/text`)
     - Manage comments (`GET /api/comments/document/{id}`, `POST /api/comments/document/{id}`)
 - **Dynamic DOM manipulation** is used to populate lists and update form fields.
 - **Forms** are validated client-side before sending requests.
@@ -87,6 +95,7 @@ The `ui` module provides the frontend interface for interacting with documents i
 - File uploads are sent via `FormData` in POST requests.
 - Metadata edits and comments are automatically synchronized with the backend.
 - Temporary visual feedback (alerts) informs the user about success or failure of operations.
+- The reader view is available at `document-reader.html?id={id}` and also linked from the UI.
 
 This module provides a complete, interactive interface for end-users to manage, search, and annotate documents in the system efficiently.
 

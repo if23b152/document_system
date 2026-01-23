@@ -84,4 +84,23 @@ public class MinioService {
             throw new RuntimeException("Failed to delete file from MinIO: " + objectKey, e);
         }
     }
+
+    /**
+     * Downloads a document from MinIO as a stream.
+     *
+     * @param objectKey The object key of the file to download
+     * @return InputStream for the file contents (caller must close)
+     */
+    public InputStream downloadDocument(String objectKey) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectKey)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download file from MinIO: " + objectKey, e);
+        }
+    }
 }

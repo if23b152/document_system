@@ -44,6 +44,15 @@ async function loadDetail() {
         document.getElementById("summaryInput").value = summary || "";
         document.getElementById("tagsInput").value = tagsString; // Pre-fill with joined string
 
+        const openPdfBtn = document.getElementById("openPdfBtn");
+        const openReaderBtn = document.getElementById("openReaderBtn");
+        if (openPdfBtn) {
+            openPdfBtn.href = `/api/documents/${id}/file`;
+        }
+        if (openReaderBtn) {
+            openReaderBtn.href = `document-reader.html?id=${id}`;
+        }
+
     } catch (err) {
         console.error("Error loading document:", err);
         alert("Document was not found!");
@@ -205,6 +214,22 @@ async function handleAddComment(event) {
 
 // Wait for DOM to load, then initialize the page
 document.addEventListener("DOMContentLoaded", async () => {
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    const savedTheme = localStorage.getItem("dms-theme");
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        if (themeToggleBtn) themeToggleBtn.textContent = "Light Mode";
+    }
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener("click", () => {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            localStorage.setItem("dms-theme", isDark ? "dark" : "light");
+            themeToggleBtn.textContent = isDark ? "Light Mode" : "Dark Mode";
+        });
+    }
+
     await loadDetail(); // load document details on the page load
     await loadComments();
     // Attach event listeners to form buttons

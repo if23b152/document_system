@@ -3,6 +3,64 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+body.dark-mode.bg-light {
+    background-color: #0f172a !important;
+}
+
+body.dark-mode {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+body.dark-mode .card-body {
+    background-color: #111827;
+}
+
+body.dark-mode .card {
+    background-color: #111827;
+}
+
+body.dark-mode .text-muted {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .list-group-item {
+    background-color: #111827;
+    color: #e2e8f0;
+}
+
+body.dark-mode .btn-outline-secondary {
+    color: #e2e8f0;
+    border-color: #64748b;
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+    background-color: #1e293b;
+}
+
+body.dark-mode .btn-outline-primary {
+    color: #e2e8f0;
+    border-color: #38bdf8;
+}
+
+body.dark-mode .btn-outline-primary:hover {
+    background-color: #0ea5e9;
+    color: #0f172a;
+}
+
+body.dark-mode .btn-primary {
+    background-color: #38bdf8;
+    border-color: #38bdf8;
+    color: #0f172a;
+}
+
+body.dark-mode .form-control,
+body.dark-mode textarea {
+    background-color: #0b1220;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
 /* Headings */
 h1 {
     letter-spacing: 0.5px;
