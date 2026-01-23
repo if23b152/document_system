@@ -27,7 +27,7 @@ function renderWordWithFocus(word) {
     const before = safe.slice(0, mid);
     const focus = safe.charAt(mid);
     const after = safe.slice(mid + 1);
-    return `${before}<span class="focus-char">${focus}</span>${after}`;
+    return `<span class="reader-word-inner">${before}<span class="focus-char">${focus}</span>${after}</span>`;
 }
 
 function storageKey(id) {
@@ -160,11 +160,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (state.focusEnabled) {
             wordDisplay.innerHTML = renderWordWithFocus(state.words[state.wordIndex]);
+            requestAnimationFrame(() => {
+                alignFocusLetter();
+                requestAnimationFrame(alignFocusLetter);
+            });
         } else {
             wordDisplay.textContent = state.words[state.wordIndex];
         }
         wordProgress.textContent = `${state.wordIndex + 1} / ${state.words.length}`;
         highlightPdfLine();
+    }
+
+    function alignFocusLetter() {
+        if (!wordDisplay) return;
+        const wordInner = wordDisplay.querySelector(".reader-word-inner");
+        const focusChar = wordDisplay.querySelector(".focus-char");
+        if (!wordInner || !focusChar) return;
+
+        wordInner.style.transform = "translateX(0px)";
+        wordInner.offsetWidth;
+        const wrapRect = wordDisplay.getBoundingClientRect();
+        const focusRect = focusChar.getBoundingClientRect();
+        const wrapCenter = wrapRect.left + wrapRect.width / 2;
+        const focusCenter = focusRect.left + focusRect.width / 2;
+        const deltaX = wrapCenter - focusCenter;
+
+        wordInner.style.transform = `translateX(${deltaX}px)`;
     }
 
     function highlightPdfLine() {
@@ -298,6 +319,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveState();
         stopPolling();
     });
+
+    window.addEventListener("resize", () => {
+        if (state.focusEnabled) {
+            alignFocusLetter();
+        }
+    });
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+            if (state.focusEnabled) {
+                alignFocusLetter();
+            }
+        });
+    }
 
     function stopPolling() {
         if (state.pollTimeout) {

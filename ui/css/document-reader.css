@@ -24,7 +24,21 @@ body.dark-mode .reader-word-wrap {
     background: linear-gradient(135deg, #0b1220, #111827);
 }
 
+body.dark-mode .reader-word-wrap::before,
+body.dark-mode .reader-word-wrap::after {
+    background: #056c98;
+}
+
 body.dark-mode .reader-word {
+    color: #e2e8f0;
+}
+
+
+body.dark-mode .form-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .reader-wpm {
     color: #e2e8f0;
 }
 
@@ -83,6 +97,29 @@ body.dark-mode .pdf-highlight {
     border: 2px dashed #e5e7eb;
     border-radius: 1rem;
     background: linear-gradient(135deg, #f8fafc, #ffffff);
+    position: relative;
+    overflow: hidden;
+}
+
+.reader-word-wrap::before,
+.reader-word-wrap::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    width: 1px;
+    height: 14px;
+    background: #475569;
+    transform: translateX(-50%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.reader-word-wrap::before {
+    top: 8px;
+}
+
+.reader-word-wrap::after {
+    bottom: 8px;
 }
 
 .reader-word {
@@ -91,11 +128,20 @@ body.dark-mode .pdf-highlight {
     color: #0f172a;
     text-align: center;
     padding: 0 1rem;
-    word-break: break-word;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
 }
 
 .reader-word .focus-char {
     color: #ef4444;
+}
+
+.reader-word-inner {
+    display: inline-block;
+    will-change: transform;
 }
 
 .reader-status {
@@ -109,7 +155,11 @@ body.dark-mode .pdf-highlight {
 .reader-wpm {
     min-width: 56px;
     font-weight: 600;
-    color: #0f172a;
+    color: #2a57b8;
+}
+
+.form-label{
+    color: #2a57b8;
 }
 
 .pdf-container {
