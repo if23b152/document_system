@@ -234,8 +234,8 @@ body.dark-mode .viewer-placeholder {
 }
 
 .doc-item {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 45ch);
     align-items: center;
     gap: 12px;
     padding: 12px;
@@ -253,6 +253,7 @@ body.dark-mode .viewer-placeholder {
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 #docs .list-group-item {
@@ -286,5 +287,9 @@ body.dark-mode .viewer-placeholder {
         max-width: none;
         border-right: none;
         border-bottom: 1px solid #e5e7eb;
+    }
+
+    .doc-item {
+        grid-template-columns: 1fr;
     }
 }

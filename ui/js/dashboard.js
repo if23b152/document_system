@@ -24,6 +24,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     const pdfPlaceholder = document.getElementById("pdfPlaceholder");
     const docCount = document.getElementById("docCount");
     let selectedDocumentId = null;
+    const FILE_NAME_LINE_LENGTH = 27;
+
+    function buildFileNameNode(fileName) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "doc-file-name fw-bold";
+
+        const normalizedName = fileName || "";
+        const firstLine = normalizedName.slice(0, FILE_NAME_LINE_LENGTH);
+        const secondLine = normalizedName.slice(FILE_NAME_LINE_LENGTH);
+
+        wrapper.textContent = secondLine ? `${firstLine}\n${secondLine}` : firstLine;
+        return wrapper;
+    }
 
     function showPdf(id) {
         if (!pdfPreview) return;
@@ -94,10 +107,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
                     const info = document.createElement("div");
                     info.className = "doc-info";
-                    info.innerHTML = `
-                        <div class="fw-bold">${fileName}</div>
-                        <div class="text-muted small">${fileSize} bytes</div>
-                    `;
+
+                    info.appendChild(buildFileNameNode(fileName));
+
+                    const fileSizeNode = document.createElement("div");
+                    fileSizeNode.className = "text-muted small";
+                    fileSizeNode.textContent = `${fileSize} bytes`;
+                    info.appendChild(fileSizeNode);
 
                     const actions = document.createElement("div");
                     actions.className = "doc-actions";
