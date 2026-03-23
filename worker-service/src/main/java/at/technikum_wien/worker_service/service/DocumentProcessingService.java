@@ -69,21 +69,16 @@ public class DocumentProcessingService {
             if (ocrResult.isSuccess()) {
                 log.info("OCR successful for document {}. Starting GenAI summary generation.", documentId);
 
+                String ocrText = ocrResult.getText();
                 String summary;
                 try {
                     // Generate AI summary from extracted text
-                    summary = genAiService.generateSummary(ocrResult.getText());
+                    summary = genAiService.generateSummary(ocrText);
                     log.info("GenAI summary generated for document {}. Summary length: {} characters.",
                             documentId, summary.length());
 
                     // Build success result (OCR + summary)
-                    finalResult = new ResultMessage(documentId, ocrResult.getText(), summary, true, null);
-
-                    // Index the document in Elasticsearch for search
-                    elasticsearchService.indexDocument(
-                            new SearchDocument(documentId, message.getFileName(),
-                                    ocrResult.getText(), summary)
-                    );
+                    finalResult = new ResultMessage(documentId, ocrText, summary, true, null);
 
                 } catch (Exception genAiException) {
                     // Case: OCR succeeded, but summary generation failed
@@ -92,12 +87,19 @@ public class DocumentProcessingService {
 
                     finalResult = new ResultMessage(
                             documentId,
-                            ocrResult.getText(),   // OCR text is available
+                            ocrText,               // OCR text is available
                             null,                  // Summary is missing
                             false,
                             "GenAI failed: " + genAiException.getMessage()
                     );
+
+                    summary = null;
                 }
+
+                // Index even when summary generation fails so search still works.
+                elasticsearchService.indexDocument(
+                        new SearchDocument(documentId, message.getFileName(), ocrText, summary)
+                );
 
             } else {
                 // Case: OCR itself failed

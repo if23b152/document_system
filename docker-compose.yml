@@ -1,9 +1,7 @@
 # =====================================================================
 # Docker Compose File for the Document Management System (DMS)
-# Version: 3.9 means we are using a modern Docker Compose syntax.
 # This file defines and runs multiple services (containers) together.
 # =====================================================================
-version: "3.9"
 
 services:
   # -----------------------------------------------------------------
@@ -12,9 +10,6 @@ services:
   postgres:
     # Use the official PostgreSQL version 15 image from Docker Hub
     image: postgres:15
-
-    # The name given to this running container
-    container_name: dms-postgres
 
     # Environment variables configure the database
     environment:
@@ -37,9 +32,6 @@ services:
   rabbitmq:
     # Use the RabbitMQ image that includes the management dashboard
     image: rabbitmq:3-management
-
-    # Container name to make it easier to reference in logs or network
-    container_name: dms-rabbitmq
 
     # The hostname inside the Docker network
     hostname: rabbitmq
@@ -70,9 +62,6 @@ services:
   minio:
     # MinIO is an S3-compatible object storage system (like AWS S3)
     image: minio/minio:latest
-
-    # The container name for MinIO
-    container_name: dms-minio
 
     # Automatically restart MinIO if it stops unexpectedly
     restart: always
@@ -111,9 +100,6 @@ services:
     build:
       context: ./rest-server           # Folder where the Dockerfile is located
       dockerfile: Dockerfile           # Name of the Dockerfile to use
-
-    # The name of the running container
-    container_name: rest-server
 
     # Map internal port 8081 of the container to port 8081 on the host
     ports:
@@ -156,9 +142,6 @@ services:
       context: ./worker-service # Path to worker-service project folder
       dockerfile: Dockerfile    # Dockerfile used for building
 
-    # Name of the worker container
-    container_name: worker-service
-
     # Map container’s internal port 8082 to host port 8082
     ports:
       - "8082:8082"
@@ -181,10 +164,6 @@ services:
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: documents  # Same bucket as used by REST server
         
-      # --- GenAI Settings ---
-      # 1. API Key: Pulls the GEMINI_API_KEY from the host's environment
-      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
-
       # Elasticsearch
       ELASTICSEARCH_HOST: http://elasticsearch:9200
 
@@ -204,17 +183,14 @@ services:
   # -----------------------------------------------------------------
   ui:
     # Build the UI (frontend) container from the Dockerfile in ./ui folder
-    build:
-      context: ./ui # Folder containing the frontend code
-      dockerfile: Dockerfile # Dockerfile for building UI container
-
-    # Name of the UI container
-    container_name: ui
 
     # Map host port 8080 to container’s internal web server port 80
     ports:
       - "8080:80"
 
+    build:
+      context: ./ui # Folder containing the frontend code
+      dockerfile: Dockerfile # Dockerfile for building UI container
     # Ensure the UI waits for the REST server to be ready
     depends_on:
       - rest-server
@@ -226,13 +202,12 @@ services:
     # Official Elasticsearch image
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
 
-    # Container name
-    container_name: elasticsearch
-
     # Environment variables for a simple single-node setup
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - bootstrap.memory_lock=false
 
     # Expose Elasticsearch default port
     ports:
