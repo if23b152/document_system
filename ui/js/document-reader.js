@@ -67,6 +67,12 @@ function saveFocusState(id, enabled) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    const currentUser = await window.dmsAuth.requireAuth();
+    if (!currentUser) {
+        return;
+    }
+    window.dmsAuth.initNavbar();
+
     const id = getIdFromUrl();
     if (!id) {
         alert("Missing document ID.");
@@ -343,7 +349,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function fetchTextWithPolling() {
         try {
-            const textRes = await fetch(`/api/documents/${id}/text`);
+            const textRes = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}/text`);
             if (textRes.status === 202) {
                 readerStatus.textContent = "Text is still processing. Please wait...";
                 state.textReady = false;
@@ -523,7 +529,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-        const docRes = await fetch(`/api/documents/${id}`);
+        const docRes = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}`);
         if (docRes.ok) {
             const doc = await docRes.json();
             readerTitle.textContent = doc.fileName || `Document ${id}`;

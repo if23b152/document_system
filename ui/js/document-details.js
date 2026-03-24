@@ -19,7 +19,7 @@ async function loadDetail() {
     const id = getIdFromUrl();
 
     try {
-        const res = await fetch(`/api/documents/${id}`);
+        const res = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}`);
         if (!res.ok) {
             alert("Document was not found!");
             return;
@@ -85,7 +85,7 @@ async function handleUpdate(event) {
     console.log("Sending payload:", JSON.stringify(updatedDoc));
 
     try {
-        const res = await fetch(`/api/documents/${id}`, {
+        const res = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedDoc)
@@ -125,7 +125,7 @@ async function handleDelete() {
 
     try {
         // Send DELETE request to backend
-        const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+        const res = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}`, { method: "DELETE" });
         if (res.ok) {
             alert("Document deleted successfully.");
             // Redirect back to the dashboard after delete
@@ -152,7 +152,7 @@ async function loadComments() {
     list.innerHTML = "";
 
     try {
-        const res = await fetch(`/api/comments/document/${id}`);
+        const res = await window.dmsAuth.authenticatedFetch(`/api/comments/document/${id}`);
         if (!res.ok) return;
 
         const comments = await res.json();
@@ -194,7 +194,7 @@ async function handleAddComment(event) {
     if (!content) return;
 
     try {
-        const res = await fetch(`/api/comments/document/${id}`, {
+        const res = await window.dmsAuth.authenticatedFetch(`/api/comments/document/${id}`, {
             method: "POST",
             headers: { "Content-Type": "text/plain" },
             body: content
@@ -214,6 +214,12 @@ async function handleAddComment(event) {
 
 // Wait for DOM to load, then initialize the page
 document.addEventListener("DOMContentLoaded", async () => {
+    const currentUser = await window.dmsAuth.requireAuth();
+    if (!currentUser) {
+        return;
+    }
+    window.dmsAuth.initNavbar();
+
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     const savedTheme = localStorage.getItem("dms-theme");
     if (savedTheme === "dark") {

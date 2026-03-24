@@ -1,5 +1,11 @@
 // Wait until the DOM (HTML elements) is fully loaded before running the script
 window.addEventListener('DOMContentLoaded', async () => {
+    const currentUser = await window.dmsAuth.requireAuth();
+    if (!currentUser) {
+        return;
+    }
+    window.dmsAuth.initNavbar();
+
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     const savedTheme = localStorage.getItem("dms-theme");
     if (savedTheme === "dark") {
@@ -52,7 +58,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             return;
         }
         try {
-            const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+            const res = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}`, { method: "DELETE" });
             if (!res.ok) {
                 alert("Löschen fehlgeschlagen.");
                 return;
@@ -68,6 +74,9 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
             await fetchDocs();
         } catch (error) {
+            if (error.message === "UNAUTHORIZED") {
+                return;
+            }
             console.error("Delete failed:", error);
             alert("Löschen fehlgeschlagen.");
         }
@@ -82,7 +91,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             : '/api/documents';
 
         try {
-            const res = await fetch(url);
+            const res = await window.dmsAuth.authenticatedFetch(url);
             if (!res.ok) {
                 throw new Error(`Request failed: ${res.status}`);
             }
@@ -153,6 +162,9 @@ window.addEventListener('DOMContentLoaded', async () => {
                 retryTimer = null;
             }
         } catch (error) {
+            if (error.message === "UNAUTHORIZED") {
+                return;
+            }
             console.warn("Document list fetch failed, retrying...", error);
             ul.innerHTML = "";
             const li = document.createElement("li");
@@ -190,7 +202,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 // Send the file to the backend API for upload
-                const res = await fetch('/api/documents/upload', {method: 'POST', body: form});
+                const res = await window.dmsAuth.authenticatedFetch('/api/documents/upload', {method: 'POST', body: form});
                 if (res.ok) {
                     alert("Upload success!"); // Notify success
                     await fetchDocs(); // Refresh the list to include the new document
@@ -198,6 +210,9 @@ window.addEventListener('DOMContentLoaded', async () => {
                     alert("Upload failed!"); // Notify failure
                 }
             } catch (error) {
+                if (error.message === "UNAUTHORIZED") {
+                    return;
+                }
                 // Handle network or server errors
                 console.error("Upload error:", error);
                 alert("Upload failed due to network error.");
