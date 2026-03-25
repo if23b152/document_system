@@ -28,4 +28,7 @@ public class DocumentResponse {
 
     // List of tags associated with the document
     private List<String> tags;
+
+    // Username of the owner (used by the admin dashboard grouping)
+    private String ownerUsername;
 }

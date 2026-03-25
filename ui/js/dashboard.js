@@ -31,6 +31,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const docCount = document.getElementById("docCount");
     let selectedDocumentId = null;
     const FILE_NAME_LINE_LENGTH = 27;
+    const isAdmin = currentUser.role === "ADMIN";
 
     function buildFileNameNode(fileName) {
         const wrapper = document.createElement("div");
@@ -82,6 +83,100 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    function createDocumentListItem(doc, tagName = "li") {
+        const {fileName, fileSize, id, ownerUsername} = doc;
+
+        const item = document.createElement(tagName);
+        item.className = "list-group-item doc-item";
+
+        const info = document.createElement("div");
+        info.className = "doc-info";
+        info.appendChild(buildFileNameNode(fileName));
+
+        const fileSizeNode = document.createElement("div");
+        fileSizeNode.className = "text-muted small";
+        fileSizeNode.textContent = `${fileSize} bytes`;
+        info.appendChild(fileSizeNode);
+
+        if (isAdmin && ownerUsername) {
+            const ownerNode = document.createElement("div");
+            ownerNode.className = "doc-owner small";
+            ownerNode.textContent = `User: ${ownerUsername}`;
+            info.appendChild(ownerNode);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "doc-actions";
+
+        const viewBtn = document.createElement("button");
+        viewBtn.type = "button";
+        viewBtn.className = "btn btn-sm btn-outline-primary";
+        viewBtn.textContent = "View";
+        viewBtn.addEventListener("click", () => showPdf(id));
+
+        const detailsBtn = document.createElement("button");
+        detailsBtn.type = "button";
+        detailsBtn.className = "btn btn-sm btn-outline-secondary";
+        detailsBtn.textContent = "Details";
+        detailsBtn.addEventListener("click", () => viewDetails(id));
+
+        const readBtn = document.createElement("a");
+        readBtn.className = "btn btn-sm btn-primary";
+        readBtn.href = `document-reader.html?id=${id}`;
+        readBtn.textContent = "Read";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "btn btn-sm btn-danger";
+        deleteBtn.textContent = "Delete";
+        deleteBtn.addEventListener("click", () => deleteDocument(id));
+
+        actions.append(viewBtn, detailsBtn, readBtn, deleteBtn);
+        item.append(info, actions);
+
+        return item;
+    }
+
+    function renderFlatDocuments(docs) {
+        docs.forEach(doc => ul.appendChild(createDocumentListItem(doc)));
+    }
+
+    function renderAdminGroups(docs) {
+        const groupedDocuments = docs.reduce((groups, doc) => {
+            const ownerKey = doc.ownerUsername || "Unassigned";
+            if (!groups.has(ownerKey)) {
+                groups.set(ownerKey, []);
+            }
+            groups.get(ownerKey).push(doc);
+            return groups;
+        }, new Map());
+
+        groupedDocuments.forEach((ownerDocs, ownerUsername) => {
+            const groupItem = document.createElement("li");
+            groupItem.className = "doc-group list-group-item";
+
+            const toggleButton = document.createElement("button");
+            toggleButton.type = "button";
+            toggleButton.className = "doc-group-toggle";
+            toggleButton.setAttribute("aria-expanded", "true");
+            toggleButton.innerHTML = `<span>${ownerUsername}</span><span class="doc-group-count">${ownerDocs.length}</span>`;
+
+            const content = document.createElement("div");
+            content.className = "doc-group-content";
+
+            ownerDocs.forEach(doc => content.appendChild(createDocumentListItem(doc, "div")));
+
+            toggleButton.addEventListener("click", () => {
+                const isExpandedNow = toggleButton.getAttribute("aria-expanded") === "true";
+                toggleButton.setAttribute("aria-expanded", String(!isExpandedNow));
+                content.hidden = isExpandedNow;
+            });
+
+            groupItem.append(toggleButton, content);
+            ul.appendChild(groupItem);
+        });
+    }
+
     // Function to fetch documents from the backend and display them
     // Accepts an optional "query" parameter to filter the list of documents by name
     async function fetchDocs(query = "") {
@@ -103,59 +198,11 @@ window.addEventListener('DOMContentLoaded', async () => {
                 docCount.textContent = docs.length.toString();
             }
 
-            // Filter the document list based on the search query (case-insensitive)
-            docs
-                // For each document, create a <li> element and append it to the <ul>
-                .forEach(doc => {
-                    // Destructure properties from the document object
-                    const {fileName, fileSize, id} = doc;
-
-                    // Create a new list item
-                    const li = document.createElement('li');
-                    li.className = "list-group-item doc-item";
-
-                    const info = document.createElement("div");
-                    info.className = "doc-info";
-
-                    info.appendChild(buildFileNameNode(fileName));
-
-                    const fileSizeNode = document.createElement("div");
-                    fileSizeNode.className = "text-muted small";
-                    fileSizeNode.textContent = `${fileSize} bytes`;
-                    info.appendChild(fileSizeNode);
-
-                    const actions = document.createElement("div");
-                    actions.className = "doc-actions";
-
-                    const viewBtn = document.createElement("button");
-                    viewBtn.type = "button";
-                    viewBtn.className = "btn btn-sm btn-outline-primary";
-                    viewBtn.textContent = "View";
-                    viewBtn.addEventListener("click", () => showPdf(id));
-
-                    const detailsBtn = document.createElement("button");
-                    detailsBtn.type = "button";
-                    detailsBtn.className = "btn btn-sm btn-outline-secondary";
-                    detailsBtn.textContent = "Details";
-                    detailsBtn.addEventListener("click", () => viewDetails(id));
-
-                    const readBtn = document.createElement("a");
-                    readBtn.className = "btn btn-sm btn-primary";
-                    readBtn.href = `document-reader.html?id=${id}`;
-                    readBtn.textContent = "Read";
-
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.type = "button";
-                    deleteBtn.className = "btn btn-sm btn-danger";
-                    deleteBtn.textContent = "Delete";
-                    deleteBtn.addEventListener("click", () => deleteDocument(id));
-
-                    actions.append(viewBtn, detailsBtn, readBtn, deleteBtn);
-                    li.append(info, actions);
-
-                    // Add the list item to the <ul>
-                    ul.appendChild(li);
-                });
+            if (isAdmin) {
+                renderAdminGroups(docs);
+            } else {
+                renderFlatDocuments(docs);
+            }
 
             if (retryTimer) {
                 clearTimeout(retryTimer);

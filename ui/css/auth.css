@@ -1,0 +1,85 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.auth-shell {
+    min-height: calc(100vh - 68px);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.auth-card {
+    width: min(100%, 460px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+}
+
+.auth-title {
+    margin-bottom: 8px;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.auth-subtitle {
+    margin-bottom: 24px;
+    color: #64748b;
+}
+
+.auth-error {
+    display: none;
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 600;
+}
+
+.auth-error.visible {
+    display: block;
+}
+
+.auth-footer {
+    margin-top: 18px;
+    color: #64748b;
+    text-align: center;
+}
+
+.auth-footer a {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+body.dark-mode {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+body.dark-mode .auth-card {
+    background: #111827;
+    border-color: #1f2937;
+    box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+}
+
+body.dark-mode .auth-subtitle,
+body.dark-mode .auth-footer {
+    color: #94a3b8;
+}
+
+body.dark-mode .form-control {
+    background: #0b1220;
+    color: #e2e8f0;
+    border-color: #334155;
+}

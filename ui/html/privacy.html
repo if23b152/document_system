@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/info-pages.css">
+</head>
+<body class="bg-light">
+<nav class="app-nav">
+    <div class="app-nav-left">
+        <a class="app-brand" href="login.html">DMS</a>
+        <a class="app-nav-link" href="login.html">Login</a>
+        <a class="app-nav-link" href="register.html">Register</a>
+    </div>
+    <div class="app-nav-right">
+        <div class="app-nav-meta">
+            <a class="app-nav-link" href="about.html">About</a>
+            <a class="app-nav-link" href="impressum.html">Impressum</a>
+            <a class="app-nav-link" href="privacy.html">Privacy</a>
+        </div>
+        <button id="themeToggleBtn" class="btn btn-outline-secondary btn-sm" type="button">Dark Mode</button>
+    </div>
+</nav>
+
+<main class="info-shell">
+    <div class="info-container">
+        <section class="info-hero">
+            <div class="info-kicker">Data Protection</div>
+            <h1 class="info-title">Datenschutz</h1>
+            <p class="info-subtitle">
+                Diese Uebersicht beschreibt in kompakter Form, welche Daten in diesem Projekt verarbeitet werden.
+                Auch hier sind die Texte als Projektvorlage gedacht und sollten vor einer echten Veroeffentlichung juristisch geprueft werden.
+            </p>
+        </section>
+
+        <div class="info-grid">
+            <section class="info-section">
+                <h2 class="info-section-title">Verarbeitete Daten</h2>
+                <div class="info-chip-row">
+                    <span class="info-chip">Benutzername</span>
+                    <span class="info-chip">E-Mail</span>
+                    <span class="info-chip">PDF-Metadaten</span>
+                    <span class="info-chip">Kommentare</span>
+                    <span class="info-chip">OCR-Text</span>
+                </div>
+            </section>
+
+            <section class="info-section">
+                <h2 class="info-section-title">Zweck</h2>
+                <p class="info-note">
+                    Die Datenverarbeitung dient der Bereitstellung von Upload, Suche, Dokumentenverwaltung, Lesemodus
+                    und der nutzerbezogenen Zuordnung von Dokumenten innerhalb des Systems.
+                </p>
+            </section>
+
+            <section class="info-section info-section-wide">
+                <h2 class="info-section-title">Technische Speicherung</h2>
+                <div class="info-list">
+                    <div class="info-list-row">
+                        <div class="info-list-label">Benutzerdaten</div>
+                        <div class="info-list-value">Werden in PostgreSQL gespeichert und fuer Anmeldung sowie Rollensteuerung genutzt.</div>
+                    </div>
+                    <div class="info-list-row">
+                        <div class="info-list-label">Dateien</div>
+                        <div class="info-list-value">PDF-Dateien liegen in Objektspeicher und sind ueber Metadaten mit Nutzern verknuepft.</div>
+                    </div>
+                    <div class="info-list-row">
+                        <div class="info-list-label">Suche</div>
+                        <div class="info-list-value">Extrahierte Texte werden fuer die Volltextsuche indexiert.</div>
+                    </div>
+                    <div class="info-list-row">
+                        <div class="info-list-label">Session</div>
+                        <div class="info-list-value">Anmeldung erfolgt ueber serverseitige Session-Verwaltung im Browser-Kontext.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="info-section info-section-wide">
+                <h2 class="info-section-title">Projekt-Hinweis</h2>
+                <p class="info-muted">
+                    Bitte ersetze diese Vorlage vor einer oeffentlichen Nutzung durch eine rechtlich passende Datenschutzerklaerung,
+                    abgestimmt auf Hosting, reale Kontaktstellen, Speicherdauer und eingesetzte Drittdienste.
+                </p>
+            </section>
+        </div>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div>Document Management System</div>
+    <div class="site-footer-links">
+        <a class="site-footer-link" href="about.html">About</a>
+        <a class="site-footer-link" href="impressum.html">Impressum</a>
+        <a class="site-footer-link" href="privacy.html">Privacy</a>
+    </div>
+</footer>
+
+<script src="../js/info-pages.js"></script>
+</body>
+</html>

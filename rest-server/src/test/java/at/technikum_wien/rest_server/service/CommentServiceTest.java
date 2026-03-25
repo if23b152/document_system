@@ -3,11 +3,8 @@ package at.technikum_wien.rest_server.service;
 import at.technikum_wien.rest_server.model.Comment;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.CommentRepository;
-import at.technikum_wien.rest_server.repository.DocumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -17,8 +14,8 @@ public class CommentServiceTest {
     // This is the repository for comments (will be mocked)
     private CommentRepository commentRepository;
 
-    // This is the repository for documents (will be mocked)
-    private DocumentRepository documentRepository;
+    // This service enforces document access and loads the target document
+    private DocumentService documentService;
 
     // This is the class under test
     private CommentService commentService;
@@ -28,11 +25,11 @@ public class CommentServiceTest {
         // Create mock for CommentRepository
         commentRepository = mock(CommentRepository.class);
 
-        // Create mock for DocumentRepository
-        documentRepository = mock(DocumentRepository.class);
+        // Create mock for DocumentService
+        documentService = mock(DocumentService.class);
 
         // Create service with mocked dependencies
-        commentService = new CommentService(commentRepository, documentRepository);
+        commentService = new CommentService(commentRepository, documentService);
     }
 
     // addComment → document exists → comment is saved
@@ -48,9 +45,9 @@ public class CommentServiceTest {
         Document document = new Document();
         document.setId(documentId);
 
-        // Mock repository to return the document
-        when(documentRepository.findById(documentId))
-                .thenReturn(Optional.of(document));
+        // Mock service to return the document
+        when(documentService.getAccessibleDocumentOrThrow(documentId))
+                .thenReturn(document);
 
         // Capture the Comment that is saved and return it
         when(commentRepository.save(any(Comment.class)))
@@ -68,8 +65,8 @@ public class CommentServiceTest {
         // Verify that createdAt was set
         assertNotNull(saved.getCreatedAt());
 
-        // Verify that documentRepository was called
-        verify(documentRepository, times(1)).findById(documentId);
+        // Verify that documentService was called
+        verify(documentService, times(1)).getAccessibleDocumentOrThrow(documentId);
 
         // Verify that commentRepository.save was called
         verify(commentRepository, times(1)).save(any(Comment.class));
@@ -81,9 +78,9 @@ public class CommentServiceTest {
         // Define a non-existing document ID
         Long documentId = 99L;
 
-        // Mock repository to return empty
-        when(documentRepository.findById(documentId))
-                .thenReturn(Optional.empty());
+        // Mock service to throw for inaccessible / missing documents
+        when(documentService.getAccessibleDocumentOrThrow(documentId))
+                .thenThrow(new RuntimeException("Document not found"));
 
         // Call method and expect RuntimeException
         RuntimeException ex = assertThrows(
@@ -97,7 +94,7 @@ public class CommentServiceTest {
         // Verify that save was NEVER called
         verify(commentRepository, never()).save(any());
 
-        // Verify that documentRepository was called
-        verify(documentRepository, times(1)).findById(documentId);
+        // Verify that documentService was called
+        verify(documentService, times(1)).getAccessibleDocumentOrThrow(documentId);
     }
 }

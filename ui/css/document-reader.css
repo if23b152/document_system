@@ -206,7 +206,7 @@ body.dark-mode .pdf-highlight {
 }
 
 body.reader-fullscreen {
-    background-color: #0b1220;
+    background-color: #f8fafc;
 }
 
 body.reader-fullscreen .reader-page {
@@ -242,12 +242,33 @@ body.reader-fullscreen .reader-word-wrap {
 }
 
 body.reader-fullscreen .card-body {
-    background-color: #0b1220;
+    background-color: #ffffff;
 }
 
 body.reader-fullscreen .reader-word-wrap {
+    border-color: #cbd5e1;
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+}
+
+body.reader-fullscreen .reader-word {
+    color: #0f172a;
+}
+
+body.dark-mode.reader-fullscreen {
+    background-color: #0b1220;
+}
+
+body.dark-mode.reader-fullscreen .card-body {
+    background-color: #0b1220;
+}
+
+body.dark-mode.reader-fullscreen .reader-word-wrap {
     border-color: #1f2937;
     background: #0b1220;
+}
+
+body.dark-mode.reader-fullscreen .reader-word {
+    color: #e2e8f0;
 }
 
 @media (max-width: 992px) {

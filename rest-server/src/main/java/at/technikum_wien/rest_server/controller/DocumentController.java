@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -86,6 +87,7 @@ public class DocumentController {
 
     // === GET: Retrieve all documents ===
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
         List<Document> documents = documentService.getAllDocuments();
 
@@ -99,6 +101,7 @@ public class DocumentController {
 
     // === GET: Retrieve one document by ID ===
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     public ResponseEntity<DocumentResponse> getDocumentById(@PathVariable Long id) {
         return documentService.getDocumentById(id)
                 .map(documentMapper::toResponse) // Convert entity to DTO
@@ -120,6 +123,7 @@ public class DocumentController {
 
     // === GET: Stream PDF file by document ID ===
     @GetMapping("/{id}/file")
+    @Transactional(readOnly = true)
     public ResponseEntity<StreamingResponseBody> getDocumentFile(@PathVariable Long id) {
         return documentService.getDocumentById(id)
                 .map(document -> {
@@ -172,6 +176,7 @@ public class DocumentController {
 
     // === GET: Retrieve OCR/extracted text for RSVP reader ===
     @GetMapping("/{id}/text")
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getDocumentText(@PathVariable Long id) {
         return documentService.getDocumentById(id)
                 .map(document -> {

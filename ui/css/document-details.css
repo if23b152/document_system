@@ -61,6 +61,24 @@ body.dark-mode textarea {
     border-color: #334155;
 }
 
+body.dark-mode .form-label {
+    color: #cbd5e1;
+}
+
+body.dark-mode .text-muted.form-label {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .form-control::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #94a3b8;
+}
+
+body.dark-mode h5,
+body.dark-mode p.text-muted {
+    color: #cbd5e1 !important;
+}
+
 /* Headings */
 h1 {
     letter-spacing: 0.5px;

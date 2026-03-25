@@ -1,21 +1,28 @@
 package at.technikum_wien.rest_server.service;
 
 import at.technikum_wien.rest_server.mapper.DocumentMapper;
+import at.technikum_wien.rest_server.model.AppUser;
 import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
 import at.technikum_wien.rest_server.producer.DocumentMessageProducer;
 import at.technikum_wien.rest_server.model.Document;
+import at.technikum_wien.rest_server.repository.AppUserRepository;
 import at.technikum_wien.rest_server.repository.DocumentRepository;
+import org.springframework.boot.ApplicationRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * Handles persistence of document metadata and triggering the OCR workflow.
@@ -29,16 +36,22 @@ public class DocumentService {
     private final DocumentMessageProducer messageProducer; // Sends messages to RabbitMQ
     private final MinioService minioService; // Handles file storage in MinIO
     private final DocumentMapper documentMapper; // Maps DTOs to entities
+    private final AppUserService appUserService;
+    private final AppUserRepository appUserRepository;
 
     @Autowired // Constructor injection of all dependencies
     public DocumentService(DocumentRepository documentRepository,
                            DocumentMessageProducer messageProducer,
                            MinioService minioService,
-                           DocumentMapper documentMapper) {
+                           DocumentMapper documentMapper,
+                           AppUserService appUserService,
+                           AppUserRepository appUserRepository) {
         this.documentRepository = documentRepository;
         this.messageProducer = messageProducer;
         this.minioService = minioService;
         this.documentMapper = documentMapper;
+        this.appUserService = appUserService;
+        this.appUserRepository = appUserRepository;
     }
 
     /**
@@ -64,12 +77,14 @@ public class DocumentService {
      */
     @Transactional // Ensures DB operations happen in a single transaction
     public Document saveDocument(String fileName, long fileSize, String objectKey) {
+        AppUser currentUser = appUserService.getCurrentUser();
 
         // Create new document entity
         Document document = new Document();
         document.setFileName(fileName);
         document.setFileSize(fileSize);
         document.setMinioObjectKey(objectKey);
+        document.setOwner(currentUser);
         document.setUploadTimestamp(LocalDateTime.now());
         document.setOcrProcessed(false); // OCR not done yet
         document.setOcrText(null);
@@ -154,16 +169,39 @@ public class DocumentService {
     // === Simple CRUD methods ===
 
     public List<Document> getAllDocuments() {
-        return documentRepository.findAll();
+        if (appUserService.currentUserIsAdmin()) {
+            return documentRepository.findAllByOrderByUploadTimestampDesc();
+        }
+        return documentRepository.findByOwnerUsernameOrderByUploadTimestampDesc(
+                appUserService.getCurrentUser().getUsername()
+        );
     }
 
     public Optional<Document> getDocumentById(Long id) {
-        return documentRepository.findById(id);
+        if (appUserService.currentUserIsAdmin()) {
+            return documentRepository.findById(id);
+        }
+        return documentRepository.findByIdAndOwnerUsername(
+                id,
+                appUserService.getCurrentUser().getUsername()
+        );
+    }
+
+    public Document getAccessibleDocumentOrThrow(Long id) {
+        return getDocumentById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Document not found."));
+    }
+
+    public List<Document> getAccessibleDocumentsByIds(List<Long> ids) {
+        return ids.stream()
+                .map(this::getDocumentById)
+                .flatMap(Optional::stream)
+                .toList();
     }
 
     @Transactional
     public Optional<Document> updateDocument(Long id, UpdateDocumentRequest dto) {
-        return documentRepository.findById(id)
+        return getDocumentById(id)
                 .map(existing -> {
                     // Apply changes from DTO to entity
                     documentMapper.updateDocumentFromDto(dto, existing);
@@ -174,7 +212,7 @@ public class DocumentService {
     @Transactional
     public boolean deleteDocument(Long id) {
         // Fetch the document to get its MinIO object key
-        Optional<Document> documentOpt = documentRepository.findById(id);
+        Optional<Document> documentOpt = getDocumentById(id);
 
         if (documentOpt.isEmpty()) {
             return false; // Document does not exist
@@ -196,6 +234,16 @@ public class DocumentService {
         documentRepository.deleteById(id);
         log.info("Deleted document {} from database and MinIO.", id);
         return true;
+    }
+
+    @Bean
+    public ApplicationRunner documentOwnershipBootstrapRunner() {
+        return args -> assignUnownedDocumentsToAdmin();
+    }
+
+    @Transactional
+    public void assignUnownedDocumentsToAdmin() {
+        appUserRepository.findByUsername("admin").ifPresent(documentRepository::assignOwnerToUnownedDocuments);
     }
 
 }

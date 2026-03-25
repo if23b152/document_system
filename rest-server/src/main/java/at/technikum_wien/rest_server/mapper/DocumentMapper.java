@@ -14,6 +14,7 @@ import java.util.List;
 public interface DocumentMapper {
 
     // 1. Converts Entity -> DTO (used for API responses)
+    @Mapping(target = "ownerUsername", expression = "java(document.getOwner() != null ? document.getOwner().getUsername() : null)")
     DocumentResponse toResponse(Document document);
 
     // 2. Updates existing Entity from DTO (used for UPDATE requests)

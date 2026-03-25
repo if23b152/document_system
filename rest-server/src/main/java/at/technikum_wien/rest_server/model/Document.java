@@ -32,6 +32,11 @@ public class Document {
     @Column(name = "minio_object_key", nullable = false)
     private String minioObjectKey;
 
+    // Owner of the document. Regular users only see their own documents.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private AppUser owner;
+
     // AI-generated summary of the document (filled in Sprint 5)
     @Column(columnDefinition = "TEXT") // Stored as TEXT because it can be long
     private String summary;

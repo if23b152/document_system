@@ -3,24 +3,26 @@ package at.technikum_wien.rest_server.service;
 import at.technikum_wien.rest_server.model.Comment;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.repository.CommentRepository;
-import at.technikum_wien.rest_server.repository.DocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service // Marks this class as a Spring service
 public class CommentService {
 
     private final CommentRepository commentRepository;   // JPA repository for comments
-    private final DocumentRepository documentRepository; // Used to load the owning document
+    private final DocumentService documentService; // Used to enforce document access rules
 
     @Autowired // Constructor injection of dependencies
     public CommentService(CommentRepository commentRepository,
-                          DocumentRepository documentRepository) {
+                          DocumentService documentService) {
         this.commentRepository = commentRepository;
-        this.documentRepository = documentRepository;
+        this.documentService = documentService;
     }
 
     /**
@@ -29,8 +31,7 @@ public class CommentService {
     public Comment addComment(Long documentId, String content) {
 
         // Load document or fail if it does not exist
-        Document document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("Document not found"));
+        Document document = documentService.getAccessibleDocumentOrThrow(documentId);
 
         // Create new comment entity
         Comment comment = new Comment();
@@ -46,6 +47,7 @@ public class CommentService {
      * Returns all comments belonging to a document.
      */
     public List<Comment> getCommentsForDocument(Long documentId) {
+        documentService.getAccessibleDocumentOrThrow(documentId);
         return commentRepository.findByDocumentId(documentId);
     }
 
@@ -53,6 +55,10 @@ public class CommentService {
      * Deletes a comment by its ID.
      */
     public void deleteComment(Long commentId) {
-        commentRepository.deleteById(commentId);
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Comment not found."));
+
+        documentService.getAccessibleDocumentOrThrow(comment.getDocument().getId());
+        commentRepository.delete(comment);
     }
 }
