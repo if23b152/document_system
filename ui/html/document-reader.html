@@ -72,6 +72,28 @@
                             <div class="reader-wpm" id="wpmValue">300</div>
                         </div>
                     </div>
+
+                    <section class="reader-comments">
+                        <div class="reader-comments-header">
+                            <h2 class="reader-comments-title">Comments</h2>
+                            <span class="reader-comments-subtitle">Shared with Document Details</span>
+                        </div>
+
+                        <form id="commentForm" class="reader-comment-form">
+                            <textarea
+                                    id="commentInput"
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="Write a comment for this document..."
+                                    required
+                            ></textarea>
+                            <button type="submit" class="btn btn-primary">Post Comment</button>
+                        </form>
+
+                        <ul id="commentsList" class="list-group list-group-flush reader-comments-list">
+                            <!-- JavaScript injects comments here -->
+                        </ul>
+                    </section>
                 </div>
             </div>
         </div>

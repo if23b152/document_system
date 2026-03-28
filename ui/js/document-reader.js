@@ -129,6 +129,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const wpmValue = document.getElementById("wpmValue");
     const pdfContainer = document.getElementById("pdfContainer");
     const openPdfBtn = document.getElementById("openPdfBtn");
+    const commentForm = document.getElementById("commentForm");
+    const commentInput = document.getElementById("commentInput");
+    const commentsList = document.getElementById("commentsList");
 
     const state = {
         words: [],
@@ -347,6 +350,73 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    async function loadComments() {
+        if (!commentsList) {
+            return;
+        }
+
+        commentsList.innerHTML = "";
+
+        try {
+            const response = await window.dmsAuth.authenticatedFetch(`/api/comments/document/${id}`);
+            if (!response.ok) {
+                return;
+            }
+
+            const comments = await response.json();
+            if (!comments.length) {
+                const emptyItem = document.createElement("li");
+                emptyItem.className = "list-group-item text-muted";
+                emptyItem.textContent = "No comments yet.";
+                commentsList.appendChild(emptyItem);
+                return;
+            }
+
+            comments.forEach(comment => {
+                const item = document.createElement("li");
+                item.className = "list-group-item";
+                const date = new Date(comment.createdAt).toLocaleString();
+
+                item.innerHTML = `
+                    <div class="fw-bold small text-muted mb-1">${date}</div>
+                    <div>${comment.content}</div>
+                `;
+
+                commentsList.appendChild(item);
+            });
+        } catch (error) {
+            console.error("Failed to load comments:", error);
+        }
+    }
+
+    async function handleAddComment(event) {
+        event.preventDefault();
+        const content = commentInput.value.trim();
+
+        if (!content) {
+            return;
+        }
+
+        try {
+            const response = await window.dmsAuth.authenticatedFetch(`/api/comments/document/${id}`, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: content
+            });
+
+            if (!response.ok) {
+                alert("Failed to add comment.");
+                return;
+            }
+
+            commentInput.value = "";
+            await loadComments();
+        } catch (error) {
+            console.error("Failed to add comment:", error);
+            alert("Failed to add comment.");
+        }
+    }
+
     async function fetchTextWithPolling() {
         try {
             const textRes = await window.dmsAuth.authenticatedFetch(`/api/documents/${id}/text`);
@@ -545,6 +615,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     wpmInput.value = state.wpm;
     wpmValue.textContent = state.wpm;
+
+    if (commentForm) {
+        commentForm.addEventListener("submit", handleAddComment);
+    }
+    await loadComments();
 
     readerStatus.textContent = "Loading PDF text layer...";
     const pdfResult = await renderPdfAndExtractText(pdfUrl);

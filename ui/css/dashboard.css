@@ -1,5 +1,5 @@
-/* Global font */
-html, body {
+html,
+body {
     height: 100%;
 }
 
@@ -15,14 +15,15 @@ body {
 .dashboard-page {
     min-height: 100vh;
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
     display: flex;
     flex-direction: column;
 }
 
 .page {
-    flex: 1;
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: auto;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -63,9 +64,11 @@ body {
 }
 
 .split {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
-    min-height: 0;
+    align-items: stretch;
+    min-height: 700px;
+    height: clamp(700px, 74vh, 860px);
 }
 
 .sidebar {
@@ -107,6 +110,7 @@ body {
     flex: 1;
     min-width: 0;
     position: relative;
+    overflow: hidden;
     background: #ffffff;
 }
 
@@ -128,6 +132,87 @@ body {
     background-color: #ffffff;
 }
 
+.doc-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease-in-out;
+    border: 1px solid transparent;
+}
+
+.doc-item:hover {
+    background-color: #eef2ff;
+}
+
+.doc-info {
+    min-width: 0;
+}
+
+.doc-file-name {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.doc-owner {
+    color: #2563eb;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.doc-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+#docs .list-group-item {
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: none;
+}
+
+.doc-group {
+    padding: 0;
+    background: transparent;
+}
+
+.doc-group-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: none;
+    border-radius: 12px;
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 12px 14px;
+    font-weight: 700;
+    text-align: left;
+}
+
+.doc-group-content {
+    padding-top: 10px;
+}
+
+.doc-group-count {
+    min-width: 28px;
+    text-align: center;
+    border-radius: 999px;
+    background: #ffffff;
+    padding: 2px 8px;
+    font-size: 0.82rem;
+}
+
+.form-control:focus {
+    border-color: #2563eb;
+    box-shadow: none;
+}
+
 body.dark-mode.bg-light {
     background-color: #0f172a !important;
 }
@@ -137,10 +222,7 @@ body.dark-mode {
     color: #e2e8f0;
 }
 
-body.dark-mode .card-body {
-    background-color: #111827;
-}
-
+body.dark-mode .card-body,
 body.dark-mode .card {
     background-color: #111827;
 }
@@ -250,82 +332,6 @@ body.dark-mode .doc-group-count {
     color: #e2e8f0;
 }
 
-.doc-item {
-    display: grid;
-    grid-template-columns: minmax(0, 45ch) auto;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border-radius: 12px;
-    transition: all 0.2s ease-in-out;
-    border: 1px solid transparent;
-}
-
-.doc-item:hover {
-    background-color: #eef2ff;
-}
-
-.doc-info {
-    min-width: 0;
-}
-
-.doc-owner {
-    color: #2563eb;
-    font-weight: 600;
-    margin-top: 4px;
-}
-
-.doc-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
-
-#docs .list-group-item {
-    margin-bottom: 12px;
-    border-radius: 12px;
-    border: none;
-}
-
-.doc-group {
-    padding: 0;
-    background: transparent;
-}
-
-.doc-group-toggle {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: none;
-    border-radius: 12px;
-    background: #e2e8f0;
-    color: #0f172a;
-    padding: 12px 14px;
-    font-weight: 700;
-    text-align: left;
-}
-
-.doc-group-content {
-    padding-top: 10px;
-}
-
-.doc-group-count {
-    min-width: 28px;
-    text-align: center;
-    border-radius: 999px;
-    background: #ffffff;
-    padding: 2px 8px;
-    font-size: 0.82rem;
-}
-
-.form-control:focus {
-    border-color: #2563eb;
-    box-shadow: none;
-}
-
 @media (max-width: 992px) {
     .toolbar {
         flex-direction: column;
@@ -339,6 +345,8 @@ body.dark-mode .doc-group-count {
 
     .split {
         flex-direction: column;
+        height: auto;
+        min-height: 0;
     }
 
     .sidebar {
