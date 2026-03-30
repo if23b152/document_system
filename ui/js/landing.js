@@ -3,10 +3,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
     const tryNowBtn = document.getElementById("tryNowBtn");
+    const showHowItWorksBtn = document.getElementById("showHowItWorksBtn");
+    const tryNowCard = document.getElementById("tryNowCard");
     const authError = document.getElementById("authError");
     const savedTheme = localStorage.getItem("dms-theme");
 
-    if (savedTheme === "dark") {
+    if (savedTheme !== "light") {
         document.body.classList.add("dark-mode");
         if (themeToggleBtn) {
             themeToggleBtn.textContent = "Light Mode";
@@ -148,6 +150,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             } catch (error) {
                 showError(error.message || "Demo session could not be started.");
             }
+        });
+    }
+
+    if (showHowItWorksBtn && tryNowCard) {
+        showHowItWorksBtn.addEventListener("click", event => {
+            event.preventDefault();
+            tryNowCard.scrollIntoView({ behavior: "smooth", block: "center" });
+            tryNowCard.classList.remove("landing-auth-glow");
+            window.requestAnimationFrame(() => {
+                tryNowCard.classList.add("landing-auth-glow");
+            });
+            window.setTimeout(() => {
+                tryNowCard.classList.remove("landing-auth-glow");
+            }, 1700);
         });
     }
 });

@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const errorBox = document.getElementById("authError");
     const savedTheme = localStorage.getItem("dms-theme");
 
-    if (savedTheme === "dark") {
+    if (savedTheme !== "light") {
         document.body.classList.add("dark-mode");
         if (themeToggleBtn) themeToggleBtn.textContent = "Light Mode";
     }

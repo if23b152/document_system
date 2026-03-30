@@ -8,7 +8,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     const savedTheme = localStorage.getItem("dms-theme");
-    if (savedTheme === "dark") {
+    if (savedTheme !== "light") {
         document.body.classList.add("dark-mode");
         if (themeToggleBtn) themeToggleBtn.textContent = "Light Mode";
     }

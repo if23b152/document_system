@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Overview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/portfolio.css">
+</head>
+<body>
+<button id="portfolioThemeToggle" class="portfolio-theme-toggle" type="button">Dark Mode</button>
+<button id="portfolioProjectsBtn" class="portfolio-projects-toggle" type="button">Go to Projects!</button>
+<main class="portfolio-shell">
+    <div class="portfolio-noise"></div>
+    <div class="portfolio-container">
+        <section class="portfolio-hero">
+            <div class="portfolio-hero-copy">
+                <div class="portfolio-kicker">Company-facing introduction</div>
+                <h1 class="portfolio-title">
+                    <span class="portfolio-title-name">Ibrahim Barakat</span>
+                    <span class="portfolio-title-role">software engineering focused on practical systems</span>
+                </h1>
+                <p class="portfolio-subtitle">
+                    This page is part of how I present my work: not only what I study, but what I actually build.
+                    I am a Computer Science student in Vienna with a focus on software engineering, DevOps,
+                    and security-minded systems, and I enjoy turning technical ideas into usable, structured products.
+                </p>
+                <div class="portfolio-chip-row">
+                    <span class="portfolio-chip">Backend Delivery</span>
+                    <span class="portfolio-chip">DevOps &amp; Cloud</span>
+                    <span class="portfolio-chip">Distributed Systems</span>
+                    <span class="portfolio-chip">Security-Aware Engineering</span>
+                </div>
+            </div>
+
+            <div class="portfolio-hero-side">
+                <div class="portfolio-signal">
+                    <div class="portfolio-signal-label">Focus</div>
+                    <div class="portfolio-signal-value">Build systems that feel intentional, usable, and technically sound.</div>
+                </div>
+                <div class="portfolio-metrics">
+                    <div class="portfolio-metric">
+                        <span class="portfolio-metric-value">01</span>
+                        <span class="portfolio-metric-label">End-to-end product ownership</span>
+                    </div>
+                    <div class="portfolio-metric">
+                        <span class="portfolio-metric-value">02</span>
+                        <span class="portfolio-metric-label">Backend + frontend delivery</span>
+                    </div>
+                    <div class="portfolio-metric">
+                        <span class="portfolio-metric-value">03</span>
+                        <span class="portfolio-metric-label">Execution with visual standards</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="portfolio-band">
+            <div class="portfolio-band-label">Current positioning</div>
+            <div class="portfolio-band-copy">
+                I am a Computer Science student currently building systems across backend development, DevOps,
+                testing, and security-related environments. This page and my projects reflect how I like to work:
+                practical, structured, and close to real technical implementation rather than only theory.
+            </div>
+        </section>
+
+        <section class="portfolio-grid">
+            <article class="portfolio-card portfolio-card-tall">
+                <div class="portfolio-card-kicker">About Me</div>
+                <h2 class="portfolio-card-title">Who I am</h2>
+                <p class="portfolio-copy">
+                    I study Computer Science at FH Technikum Wien and focus on building reliable software systems
+                    with clear technical structure. My background includes software development, distributed systems,
+                    DevOps, and security-oriented engineering, and I am especially motivated by projects where
+                    architecture, implementation, and usability come together.
+                </p>
+            </article>
+
+            <article class="portfolio-card portfolio-card-accent">
+                <div class="portfolio-card-kicker">Work Style</div>
+                <h2 class="portfolio-card-title">How I usually operate</h2>
+                <p class="portfolio-copy">
+                    An important part of how I learn is by building real projects. Instead of only describing my skills,
+                    I prefer to show them through systems I designed and implemented myself, from backend services
+                    and infrastructure to user-facing interfaces.
+                </p>
+                <ul class="portfolio-list">
+                    <li>I like building systems that are technically clear and practical to use.</li>
+                    <li>I pay attention to structure, maintainability, and real implementation details.</li>
+                    <li>I enjoy connecting backend logic, infrastructure, and user-facing functionality.</li>
+                    <li>I prefer showing my skills through working projects, not only through descriptions.</li>
+                </ul>
+            </article>
+
+            <article class="portfolio-card portfolio-card-experience">
+                <div class="portfolio-card-kicker">Experience</div>
+                <div>
+                    <h2 class="portfolio-card-title">What I have done</h2>
+                    <div class="portfolio-experience-entries">
+                        <article class="portfolio-experience-entry">
+                            <h3 class="portfolio-experience-title">Document Management System</h3>
+                            <p class="portfolio-copy">
+                                Built a document management system with separate backend, UI, and worker-service components.
+                                The project combines backend logic, OCR-related workflows, AI-supported summarization,
+                                full-text search, and service-based architecture. It reflects how I approach engineering:
+                                structured systems, practical functionality, and end-to-end implementation thinking.
+                            </p>
+                        </article>
+                        <article class="portfolio-experience-entry">
+                            <h3 class="portfolio-experience-title">Engineering Presentation Through This Website</h3>
+                            <p class="portfolio-copy">
+                                Designed this page as a compact, company-facing introduction to present not just my background,
+                                but also how I build and communicate technical work. The goal is to make my profile,
+                                projects, and engineering mindset understandable in a direct and practical way
+                                for recruiters and teams.
+                            </p>
+                        </article>
+                    </div>
+                </div>
+            </article>
+
+            <article id="portfolioProjectsCard" class="portfolio-card portfolio-card-wide portfolio-project-card">
+                <div class="portfolio-card-kicker">Projects</div>
+                <div class="portfolio-project-top">
+                    <div>
+                        <h2 class="portfolio-card-title">Selected work</h2>
+                        <p class="portfolio-copy">
+                            This section acts as the forward path into the actual application preview.
+                            There is intentionally no navigation back from here except the browser back button.
+                        </p>
+                    </div>
+                    <div class="portfolio-project-marker">Case Study</div>
+                </div>
+
+                <div class="project-entry">
+                    <div class="project-entry-copy">
+                        <h3 class="project-entry-title">Document Management System</h3>
+                        <p class="portfolio-copy">
+                            A document platform with user-based access, PDF upload, OCR-backed text extraction,
+                            Elasticsearch search, metadata editing, comments, admin-aware ownership, and a reader mode
+                            tailored for faster review workflows.
+                        </p>
+                        <div class="project-entry-tags">
+                            <span class="portfolio-chip">Spring Boot</span>
+                            <span class="portfolio-chip">PostgreSQL</span>
+                            <span class="portfolio-chip">Elasticsearch</span>
+                            <span class="portfolio-chip">Docker</span>
+                            <span class="portfolio-chip">UI / Interaction Design</span>
+                        </div>
+                    </div>
+                    <div class="project-entry-action">
+                        <a class="project-entry-link" href="index.html">
+                            <span class="project-entry-link-label">Open Project</span>
+                            <span class="project-entry-link-arrow">→</span>
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </div>
+</main>
+<script>
+    (function () {
+        const button = document.getElementById("portfolioThemeToggle");
+        const projectsButton = document.getElementById("portfolioProjectsBtn");
+        const projectsCard = document.getElementById("portfolioProjectsCard");
+        const savedTheme = localStorage.getItem("dms-theme");
+
+        if (savedTheme !== "light") {
+            document.body.classList.add("dark-mode");
+            button.textContent = "Light Mode";
+        }
+
+        button.addEventListener("click", function () {
+            document.body.classList.toggle("dark-mode");
+            const isDark = document.body.classList.contains("dark-mode");
+            localStorage.setItem("dms-theme", isDark ? "dark" : "light");
+            button.textContent = isDark ? "Light Mode" : "Dark Mode";
+        });
+
+        if (projectsButton && projectsCard) {
+            projectsButton.addEventListener("click", function () {
+                projectsCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                projectsCard.classList.remove("portfolio-project-card-glow");
+                window.requestAnimationFrame(function () {
+                    projectsCard.classList.add("portfolio-project-card-glow");
+                });
+                window.setTimeout(function () {
+                    projectsCard.classList.remove("portfolio-project-card-glow");
+                }, 1800);
+            });
+        }
+    }());
+</script>
+</body>
+</html>

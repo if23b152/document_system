@@ -27,9 +27,11 @@ body.dark-mode .landing-auth-card {
 }
 
 body.dark-mode .landing-muted,
-body.dark-mode .landing-feature p,
 body.dark-mode .landing-scroll-note {
-    color: #94a3b8;
+    color: #dbe7f5;
+}
+body.dark-mode .landing-feature p{
+    color: #1f2937;
 }
 
 body.dark-mode .landing-title,
@@ -147,7 +149,8 @@ body.dark-mode .landing-auth-card .form-control::placeholder {
 
 .landing-feature p {
     margin: 0;
-    color: #475569;
+    color: #111827;
+    font-weight: 500;
 }
 
 .landing-chip-row {
@@ -201,6 +204,39 @@ body.dark-mode .landing-auth-card .form-control::placeholder {
 .landing-auth-highlight {
     border: 1px solid #93c5fd;
     box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08), 0 18px 40px rgba(37, 99, 235, 0.12);
+    transition: border-color 0.38s ease, box-shadow 0.38s ease, transform 0.38s ease, filter 0.38s ease;
+}
+
+.landing-auth-glow {
+    border-color: rgba(37, 99, 235, 0.7);
+    box-shadow:
+        0 0 0 1px rgba(96, 165, 250, 0.55),
+        0 0 22px rgba(59, 130, 246, 0.18),
+        0 18px 40px rgba(37, 99, 235, 0.16);
+    animation: landingGlowPulse 1.45s ease;
+}
+
+body.dark-mode .landing-auth-glow {
+    border-color: rgba(103, 232, 249, 0.62);
+    box-shadow:
+        0 0 0 1px rgba(56, 189, 248, 0.42),
+        0 0 26px rgba(34, 211, 238, 0.2),
+        0 22px 42px rgba(2, 6, 23, 0.36);
+}
+
+@keyframes landingGlowPulse {
+    0% {
+        transform: translateY(0);
+        filter: saturate(1);
+    }
+    35% {
+        transform: translateY(-1px);
+        filter: saturate(1.04);
+    }
+    100% {
+        transform: translateY(0);
+        filter: saturate(1);
+    }
 }
 
 .landing-demo-note {
