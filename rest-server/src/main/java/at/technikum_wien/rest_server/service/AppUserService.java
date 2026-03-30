@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
 
@@ -48,6 +49,22 @@ public class AppUserService implements UserDetailsService {
         user.setEmail(request.email().trim().toLowerCase());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.USER);
+        user.setTemporary(false);
+        user.setCreatedAt(LocalDateTime.now());
+        return appUserRepository.save(user);
+    }
+
+    public AppUser createTemporaryUser() {
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        String username = "guest_" + suffix;
+        String rawPassword = username;
+
+        AppUser user = new AppUser();
+        user.setUsername(username);
+        user.setEmail(username + "@temp.local");
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setRole(UserRole.USER);
+        user.setTemporary(true);
         user.setCreatedAt(LocalDateTime.now());
         return appUserRepository.save(user);
     }
@@ -55,6 +72,10 @@ public class AppUserService implements UserDetailsService {
     public AppUser findByUsername(String username) {
         return appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
+    }
+
+    public void deleteUser(AppUser user) {
+        appUserRepository.delete(user);
     }
 
     public AppUser getCurrentUser() {
@@ -84,9 +105,14 @@ public class AppUserService implements UserDetailsService {
     public ApplicationRunner adminBootstrapRunner() {
         return args -> {
             appUserRepository.findAll().stream()
-                    .filter(user -> user.getRole() == null)
+                    .filter(user -> user.getRole() == null || user.getTemporary() == null)
                     .forEach(user -> {
-                        user.setRole(UserRole.USER);
+                        if (user.getRole() == null) {
+                            user.setRole(UserRole.USER);
+                        }
+                        if (user.getTemporary() == null) {
+                            user.setTemporary(false);
+                        }
                         appUserRepository.save(user);
                     });
 

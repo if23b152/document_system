@@ -13,6 +13,63 @@ function formatTimestamp(ts) {
 // Store the original document so we can reset fields if needed
 let originalDoc = null;
 
+function updateCrossLinks(id) {
+    const navDetailsLink = document.getElementById("navDetailsLink");
+    const navReaderLink = document.getElementById("navReaderLink");
+    const openReaderBtn = document.getElementById("openReaderBtn");
+
+    if (navDetailsLink) {
+        navDetailsLink.href = `document-details.html?id=${id}`;
+    }
+    if (navReaderLink) {
+        navReaderLink.href = `document-reader.html?id=${id}`;
+    }
+    if (openReaderBtn) {
+        openReaderBtn.href = `document-reader.html?id=${id}`;
+    }
+}
+
+async function loadDocumentNavigator(currentId) {
+    const list = document.getElementById("detailsDocList");
+    if (!list) {
+        return;
+    }
+
+    list.innerHTML = "";
+
+    try {
+        const res = await window.dmsAuth.authenticatedFetch("/api/documents");
+        if (!res.ok) {
+            throw new Error("Failed to load documents");
+        }
+
+        const docs = await res.json();
+        docs.forEach(doc => {
+            const item = document.createElement("li");
+            item.className = "list-group-item details-doc-item";
+            if (String(doc.id) === String(currentId)) {
+                item.classList.add("active");
+            }
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "details-doc-link";
+            button.textContent = doc.fileName;
+            button.addEventListener("click", () => {
+                window.location.href = `document-details.html?id=${doc.id}`;
+            });
+            item.appendChild(button);
+            list.appendChild(item);
+        });
+    } catch (err) {
+        console.error("Failed to load document navigator:", err);
+        const item = document.createElement("li");
+        item.className = "list-group-item text-muted";
+        item.textContent = "Document list unavailable.";
+        list.appendChild(item);
+    }
+}
+
 // Load and display document details from the backend
 // Load and display document details from the backend
 async function loadDetail() {
@@ -45,13 +102,10 @@ async function loadDetail() {
         document.getElementById("tagsInput").value = tagsString; // Pre-fill with joined string
 
         const openPdfBtn = document.getElementById("openPdfBtn");
-        const openReaderBtn = document.getElementById("openReaderBtn");
         if (openPdfBtn) {
             openPdfBtn.href = `/api/documents/${id}/file`;
         }
-        if (openReaderBtn) {
-            openReaderBtn.href = `document-reader.html?id=${id}`;
-        }
+        updateCrossLinks(id);
 
     } catch (err) {
         console.error("Error loading document:", err);
@@ -236,11 +290,59 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    const detailsDocToggle = document.getElementById("detailsDocToggle");
+    const detailsDocPanel = document.getElementById("detailsDocPanel");
+    const detailsDocCloseBtn = document.getElementById("detailsDocCloseBtn");
+    function openDrawer(toggle, panel) {
+        panel.hidden = false;
+        requestAnimationFrame(() => {
+            toggle.setAttribute("aria-expanded", "true");
+            panel.classList.add("open");
+        });
+    }
+
+    function closeDrawer(toggle, panel) {
+        toggle.setAttribute("aria-expanded", "false");
+        panel.classList.remove("open");
+        window.setTimeout(() => {
+            if (toggle.getAttribute("aria-expanded") === "false") {
+                panel.hidden = true;
+            }
+        }, 340);
+    }
+
+    if (detailsDocToggle && detailsDocPanel) {
+        detailsDocToggle.addEventListener("click", () => {
+            const expanded = detailsDocToggle.getAttribute("aria-expanded") === "true";
+            if (expanded) {
+                closeDrawer(detailsDocToggle, detailsDocPanel);
+            } else {
+                openDrawer(detailsDocToggle, detailsDocPanel);
+            }
+        });
+    }
+    if (detailsDocCloseBtn && detailsDocPanel && detailsDocToggle) {
+        detailsDocCloseBtn.addEventListener("click", () => {
+            closeDrawer(detailsDocToggle, detailsDocPanel);
+        });
+    }
+
+    const currentId = getIdFromUrl();
+    updateCrossLinks(currentId);
     await loadDetail(); // load document details on the page load
+    await loadDocumentNavigator(currentId);
     await loadComments();
     // Attach event listeners to form buttons
     document.getElementById("editForm").addEventListener("submit", handleUpdate);
     document.getElementById("cancelBtn").addEventListener("click", handleCancel);
     document.getElementById("deleteBtn").addEventListener("click", handleDelete);
     document.getElementById("commentForm").addEventListener("submit", handleAddComment);
+    document.getElementById("openReaderBtn").addEventListener("click", event => {
+        const currentDocumentId = getIdFromUrl();
+        if (!currentDocumentId) {
+            event.preventDefault();
+            return;
+        }
+        window.location.href = `document-reader.html?id=${currentDocumentId}`;
+    });
 });

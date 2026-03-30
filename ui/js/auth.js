@@ -1,4 +1,5 @@
 (function () {
+
     async function fetchCurrentUser() {
         const response = await fetch("/api/auth/me", { credentials: "same-origin" });
         if (!response.ok) {
@@ -8,7 +9,11 @@
     }
 
     function redirectToLogin() {
-        window.location.href = "login.html";
+        window.location.href = "index.html";
+    }
+
+    function redirectToHome() {
+        window.location.href = "index.html";
     }
 
     function redirectToDashboard() {
@@ -48,7 +53,7 @@
 
         fetchCurrentUser().then(user => {
             if (user && userNameNode) {
-                userNameNode.textContent = user.username;
+                userNameNode.textContent = user.temporary ? `${user.username} (Demo)` : user.username;
             }
         });
 
@@ -60,7 +65,7 @@
                         credentials: "same-origin"
                     });
                 } finally {
-                    redirectToLogin();
+                    redirectToHome();
                 }
             });
         }

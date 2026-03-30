@@ -5,6 +5,7 @@ import at.technikum_wien.rest_server.model.AuthResponse;
 import at.technikum_wien.rest_server.model.LoginRequest;
 import at.technikum_wien.rest_server.model.RegisterRequest;
 import at.technikum_wien.rest_server.service.AppUserService;
+import at.technikum_wien.rest_server.service.DocumentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -28,11 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AppUserService appUserService;
+    private final DocumentService documentService;
     private final AuthenticationManager authenticationManager;
 
     public AuthController(AppUserService appUserService,
+                          DocumentService documentService,
                           AuthenticationManager authenticationManager) {
         this.appUserService = appUserService;
+        this.documentService = documentService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -62,8 +66,27 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/try")
+    public ResponseEntity<AuthResponse> tryNow(HttpServletRequest httpRequest) {
+        AppUser temporaryUser = appUserService.createTemporaryUser();
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(temporaryUser.getUsername(), temporaryUser.getUsername())
+        );
+        storeAuthentication(authentication, httpRequest);
+        return ResponseEntity.ok(AuthResponse.fromUser(temporaryUser));
+    }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            AppUser user = appUserService.findByUsername(authentication.getName());
+            if (Boolean.TRUE.equals(user.getTemporary())) {
+                documentService.deleteDocumentsForOwner(user);
+                appUserService.deleteUser(user);
+            }
+        }
+
         SecurityContextHolder.clearContext();
         HttpSession session = request.getSession(false);
         if (session != null) {

@@ -236,14 +236,40 @@ public class DocumentService {
         return true;
     }
 
+    @Transactional
+    public void deleteDocumentsForOwner(AppUser owner) {
+        documentRepository.findCleanupDataByOwnerId(owner.getId())
+                .forEach(this::deleteStoredDocument);
+    }
+
     @Bean
     public ApplicationRunner documentOwnershipBootstrapRunner() {
-        return args -> assignUnownedDocumentsToAdmin();
+        return args -> {
+            cleanupTemporaryUsers();
+            assignUnownedDocumentsToAdmin();
+        };
     }
 
     @Transactional
     public void assignUnownedDocumentsToAdmin() {
         appUserRepository.findByUsername("admin").ifPresent(documentRepository::assignOwnerToUnownedDocuments);
+    }
+
+    @Transactional
+    public void cleanupTemporaryUsers() {
+        appUserRepository.findByTemporaryTrue().forEach(user -> {
+            deleteDocumentsForOwner(user);
+            appUserRepository.delete(user);
+        });
+    }
+
+    private void deleteStoredDocument(DocumentRepository.DocumentCleanupProjection document) {
+        try {
+            minioService.deleteDocument(document.getMinioObjectKey());
+        } catch (Exception e) {
+            log.error("Failed to delete temporary document file {}: {}", document.getId(), e.getMessage(), e);
+        }
+        documentRepository.deleteById(document.getId());
     }
 
 }

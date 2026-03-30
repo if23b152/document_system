@@ -40,6 +40,9 @@ public class AppUser {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean temporary = false;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 }

@@ -14,9 +14,19 @@ import java.util.Optional;
 @Repository
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
+    interface DocumentCleanupProjection {
+        Long getId();
+        String getMinioObjectKey();
+    }
+
     List<Document> findAllByOrderByUploadTimestampDesc();
 
     List<Document> findByOwnerUsernameOrderByUploadTimestampDesc(String username);
+
+    List<Document> findByOwnerId(Long ownerId);
+
+    @Query("select d.id as id, d.minioObjectKey as minioObjectKey from Document d where d.owner.id = :ownerId")
+    List<DocumentCleanupProjection> findCleanupDataByOwnerId(Long ownerId);
 
     Optional<Document> findByIdAndOwnerUsername(Long id, String username);
     @Modifying

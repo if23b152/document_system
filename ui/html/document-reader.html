@@ -14,11 +14,14 @@
     <div class="app-nav-left">
         <a class="app-brand" href="dashboard.html">DMS</a>
         <a class="app-nav-link" href="dashboard.html">Dashboard</a>
+        <a class="app-nav-link" id="navDetailsLink" href="#">Details</a>
+        <a class="app-nav-link" id="navReaderLink" href="#">Reader</a>
     </div>
+    <div class="app-nav-center">DMS Reader</div>
     <div class="app-nav-right">
         <div class="app-nav-meta">
             <a class="app-nav-link" href="about.html">About</a>
-            <a class="app-nav-link" href="impressum.html">Impressum</a>
+            <a class="app-nav-link" href="impressum.html">Legal Notice</a>
             <a class="app-nav-link" href="privacy.html">Privacy</a>
         </div>
         <span class="app-nav-user" id="navUser"></span>
@@ -28,12 +31,23 @@
 
 <div class="container-fluid py-4 reader-page">
     <header class="mb-4">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div>
-                <h1 class="fw-bold text-primary mb-1">Document Reader</h1>
-                <div class="text-muted" id="readerTitle">Loading...</div>
+        <div class="reader-header">
+            <div class="reader-header-left">
+                <button id="readerDocToggle" class="btn btn-outline-primary" type="button" aria-expanded="false">All Documents</button>
+                <div>
+                    <div class="reader-header-label">Current PDF</div>
+                    <div class="text-muted" id="readerTitle">Loading...</div>
+                </div>
             </div>
-            <div class="d-flex gap-2">
+            <div class="reader-header-search">
+                <form id="readerSearchForm" class="reader-search-form">
+                    <input id="readerSearchInput" class="form-control" type="search" placeholder="Search this document with Elasticsearch and highlight matches in the PDF">
+                    <button class="btn btn-primary" type="submit">Search</button>
+                    <button id="readerSearchResetBtn" class="btn btn-outline-secondary" type="button">Clear</button>
+                </form>
+                <div id="readerSearchStatus" class="reader-search-status text-muted"></div>
+            </div>
+            <div class="reader-header-actions">
                 <button id="fullscreenToggleBtn" class="btn btn-outline-secondary" type="button">Fullscreen</button>
                 <button id="themeToggleBtn" class="btn btn-outline-secondary" type="button">Dark Mode</button>
                 <a class="btn btn-outline-primary" href="dashboard.html">Back to Dashboard</a>
@@ -41,6 +55,17 @@
             </div>
         </div>
     </header>
+
+    <aside id="readerDocPanel" class="reader-doc-drawer" hidden>
+        <div class="reader-doc-drawer-header">
+            <div>
+                <div class="reader-doc-drawer-title">All Documents</div>
+                <div class="reader-doc-drawer-subtitle">Switch PDFs without going back to the dashboard.</div>
+            </div>
+            <button id="readerDocCloseBtn" class="btn btn-outline-secondary btn-sm" type="button">Close</button>
+        </div>
+        <ul id="readerDocList" class="list-group reader-doc-list"></ul>
+    </aside>
 
     <div class="row g-4">
         <!-- LEFT: RSVP Reader -->
@@ -102,6 +127,10 @@
         <div class="col-lg-7">
             <div class="card shadow-sm h-100">
                 <div class="card-body p-0">
+                    <div class="pdf-toolbar">
+                        <div class="pdf-toolbar-title">PDF Preview</div>
+                        <div class="pdf-toolbar-hint">Click a line in the preview to start the reader from the beginning of that line.</div>
+                    </div>
                     <div id="pdfContainer" class="pdf-container" aria-label="PDF Preview"></div>
                 </div>
             </div>
@@ -113,7 +142,7 @@
     <div>Document Management System</div>
     <div class="site-footer-links">
         <a class="site-footer-link" href="about.html">About</a>
-        <a class="site-footer-link" href="impressum.html">Impressum</a>
+        <a class="site-footer-link" href="impressum.html">Legal Notice</a>
         <a class="site-footer-link" href="privacy.html">Privacy</a>
     </div>
 </footer>

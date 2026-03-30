@@ -20,6 +20,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await window.dmsAuth.redirectIfAuthenticated();
 
+    async function resolveLoginError(response) {
+        if (response.status === 401) {
+            return "Login failed. Check your username and password.";
+        }
+        if (response.status >= 500) {
+            return "The server is currently unavailable. Please try again in a moment.";
+        }
+
+        try {
+            const errorData = await response.json();
+            if (errorData.detail) {
+                return errorData.detail;
+            }
+            if (errorData.message) {
+                return errorData.message;
+            }
+        } catch (ignored) {
+        }
+
+        return `Login failed (HTTP ${response.status}).`;
+    }
+
     loginForm.addEventListener("submit", async event => {
         event.preventDefault();
         errorBox.classList.remove("visible");
@@ -38,12 +60,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
 
             if (!response.ok) {
-                throw new Error("Login failed");
+                throw new Error(await resolveLoginError(response));
             }
 
             window.location.href = "dashboard.html";
         } catch (error) {
-            errorBox.textContent = "Login failed. Check your username and password.";
+            errorBox.textContent = error.message || "Login failed.";
             errorBox.classList.add("visible");
         }
     });

@@ -66,6 +66,10 @@ function saveFocusState(id, enabled) {
     localStorage.setItem(focusKey(id), enabled ? "on" : "off");
 }
 
+function normalizeSearchTerms(query) {
+    return (query.toLowerCase().match(/[a-z0-9_]+/g) || []).filter(Boolean);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const currentUser = await window.dmsAuth.requireAuth();
     if (!currentUser) {
@@ -132,6 +136,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const commentForm = document.getElementById("commentForm");
     const commentInput = document.getElementById("commentInput");
     const commentsList = document.getElementById("commentsList");
+    const navDetailsLink = document.getElementById("navDetailsLink");
+    const navReaderLink = document.getElementById("navReaderLink");
+    const readerDocList = document.getElementById("readerDocList");
+    const readerSearchForm = document.getElementById("readerSearchForm");
+    const readerSearchInput = document.getElementById("readerSearchInput");
+    const readerSearchResetBtn = document.getElementById("readerSearchResetBtn");
+    const readerSearchStatus = document.getElementById("readerSearchStatus");
+    const readerDocCloseBtn = document.getElementById("readerDocCloseBtn");
 
     const state = {
         words: [],
@@ -145,7 +157,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         pdfWordSpans: [],
         pdfWordLineKeys: [],
         pdfLineMap: new Map(),
-        activeLineSpans: []
+        activeLineSpans: [],
+        lineFirstWordIndex: new Map(),
+        searchHighlightedSpans: []
     };
 
     const stored = loadStoredState(id);
@@ -227,6 +241,151 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (spanRect.top < containerRect.top || spanRect.bottom > containerRect.bottom) {
             span.scrollIntoView({ block: "center", behavior: "smooth" });
+        }
+    }
+
+    function jumpToLine(lineKey) {
+        const firstIndex = state.lineFirstWordIndex.get(lineKey);
+        if (!Number.isInteger(firstIndex)) {
+            return;
+        }
+
+        stopPlayback();
+        state.wordIndex = firstIndex;
+        updateWordDisplay();
+        saveState();
+        readerStatus.textContent = `Reader start moved to word ${firstIndex + 1}.`;
+    }
+
+    function updateCrossLinks() {
+        if (navDetailsLink) {
+            navDetailsLink.href = `document-details.html?id=${id}`;
+        }
+        if (navReaderLink) {
+            navReaderLink.href = `document-reader.html?id=${id}`;
+        }
+    }
+
+    function clearSearchHighlights() {
+        if (!state.searchHighlightedSpans.length) {
+            return;
+        }
+        state.searchHighlightedSpans.forEach(span => span.classList.remove("pdf-search-hit"));
+        state.searchHighlightedSpans = [];
+    }
+
+    function highlightSearchMatches(query) {
+        clearSearchHighlights();
+
+        const terms = normalizeSearchTerms(query);
+        if (!terms.length) {
+            if (readerSearchStatus) {
+                readerSearchStatus.textContent = "";
+            }
+            return;
+        }
+
+        const uniqueSpans = Array.from(new Set(state.pdfWordSpans));
+        uniqueSpans.forEach(span => {
+            const text = (span.textContent || "").toLowerCase();
+            if (terms.some(term => text.includes(term))) {
+                span.classList.add("pdf-search-hit");
+                state.searchHighlightedSpans.push(span);
+            }
+        });
+
+        if (readerSearchStatus) {
+            readerSearchStatus.textContent = state.searchHighlightedSpans.length
+                ? `${state.searchHighlightedSpans.length} highlighted text fragment(s) found in this PDF.`
+                : "Elasticsearch found this document, but no visible PDF text fragments matched the current query.";
+        }
+
+        if (state.searchHighlightedSpans.length) {
+            ensureSpanVisible(state.searchHighlightedSpans[0]);
+        }
+    }
+
+    async function loadDocumentNavigator() {
+        if (!readerDocList) {
+            return;
+        }
+
+        readerDocList.innerHTML = "";
+        try {
+            const response = await window.dmsAuth.authenticatedFetch("/api/documents");
+            if (!response.ok) {
+                throw new Error("Failed to load documents");
+            }
+
+            const docs = await response.json();
+            docs.forEach(doc => {
+                const item = document.createElement("li");
+                item.className = "list-group-item reader-doc-item";
+                if (String(doc.id) === String(id)) {
+                    item.classList.add("active");
+                }
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "reader-doc-link";
+                button.textContent = doc.fileName;
+                button.addEventListener("click", () => {
+                    window.location.href = `document-reader.html?id=${doc.id}`;
+                });
+                item.appendChild(button);
+                readerDocList.appendChild(item);
+            });
+        } catch (error) {
+            console.error("Failed to load reader document list:", error);
+            const item = document.createElement("li");
+            item.className = "list-group-item text-muted";
+            item.textContent = "Document list unavailable.";
+            readerDocList.appendChild(item);
+        }
+    }
+
+    async function handleReaderSearch(event) {
+        event.preventDefault();
+
+        const query = readerSearchInput ? readerSearchInput.value.trim() : "";
+        if (!query) {
+            clearSearchHighlights();
+            if (readerSearchStatus) {
+                readerSearchStatus.textContent = "";
+            }
+            return;
+        }
+
+        try {
+            const response = await window.dmsAuth.authenticatedFetch(`/api/documents/search?query=${encodeURIComponent(query)}`);
+            if (!response.ok) {
+                throw new Error("Search failed");
+            }
+
+            const docs = await response.json();
+            const currentDocMatched = docs.some(doc => String(doc.id) === String(id));
+
+            if (!currentDocMatched) {
+                clearSearchHighlights();
+                if (readerSearchStatus) {
+                    readerSearchStatus.textContent = "Elasticsearch found no hit in the currently opened document.";
+                }
+                return;
+            }
+
+            if (!state.pdfWordSpans.length) {
+                if (readerSearchStatus) {
+                    readerSearchStatus.textContent = "The document matched in Elasticsearch, but PDF-side highlighting is unavailable in fallback mode.";
+                }
+                return;
+            }
+
+            highlightSearchMatches(query);
+        } catch (error) {
+            console.error("Reader search failed:", error);
+            if (readerSearchStatus) {
+                readerSearchStatus.textContent = "Search failed. Please try again.";
+            }
         }
     }
 
@@ -529,12 +688,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             const spans = [];
             const lineKeys = [];
             const lineMap = new Map();
+            const lineFirstWordIndex = new Map();
 
             for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
                 const page = await pdf.getPage(pageNum);
                 const unscaledViewport = page.getViewport({ scale: 1 });
                 const containerWidth = pdfContainer.clientWidth || 800;
-                const scale = containerWidth / unscaledViewport.width;
+                const scale = (containerWidth / unscaledViewport.width) * 0.78;
                 const viewport = page.getViewport({ scale });
 
                 const pageWrapper = document.createElement("div");
@@ -566,6 +726,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const pageSpans = Array.from(textLayer.querySelectorAll("span"));
                 const pageRect = pageWrapper.getBoundingClientRect();
+                const pageLinePositions = new Map();
                 pageSpans.forEach(span => {
                     const raw = span.textContent || "";
                     const tokens = raw.trim().split(/\s+/).filter(Boolean);
@@ -578,6 +739,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                         const lineBucket = Math.round(relativeTop / 3);
                         const lineKey = `${pageNum}:${lineBucket}`;
 
+                        if (!lineFirstWordIndex.has(lineKey)) {
+                            lineFirstWordIndex.set(lineKey, words.length);
+                        }
+                        if (!pageLinePositions.has(lineKey)) {
+                            pageLinePositions.set(lineKey, relativeTop);
+                        }
+
                         words.push(token);
                         spans.push(span);
                         lineKeys.push(lineKey);
@@ -587,10 +755,44 @@ document.addEventListener("DOMContentLoaded", async () => {
                         }
                         lineMap.get(lineKey).push(span);
                     });
+
+                    const spanRect = span.getBoundingClientRect();
+                    const relativeTop = spanRect.top - pageRect.top;
+                    const lineBucket = Math.round(relativeTop / 3);
+                    const lineKey = `${pageNum}:${lineBucket}`;
+                    span.dataset.lineKey = lineKey;
+                    span.addEventListener("click", event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        jumpToLine(lineKey);
+                    });
+                });
+
+                pageWrapper.addEventListener("click", event => {
+                    if (!pageLinePositions.size) {
+                        return;
+                    }
+
+                    const wrapperRect = pageWrapper.getBoundingClientRect();
+                    const clickTop = event.clientY - wrapperRect.top;
+                    let bestLineKey = null;
+                    let bestDistance = Number.POSITIVE_INFINITY;
+
+                    pageLinePositions.forEach((lineTop, lineKey) => {
+                        const distance = Math.abs(lineTop - clickTop);
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            bestLineKey = lineKey;
+                        }
+                    });
+
+                    if (bestLineKey) {
+                        jumpToLine(bestLineKey);
+                    }
                 });
             }
 
-            return { words, spans, lineKeys, lineMap, usedPdfJs: true };
+            return { words, spans, lineKeys, lineMap, lineFirstWordIndex, usedPdfJs: true };
         } catch (error) {
             console.error("Failed to render PDF:", error);
             renderPdfFallback(pdfUrl);
@@ -612,12 +814,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const pdfUrl = `/api/documents/${id}/file`;
     openPdfBtn.href = pdfUrl;
+    updateCrossLinks();
+    await loadDocumentNavigator();
 
     wpmInput.value = state.wpm;
     wpmValue.textContent = state.wpm;
 
     if (commentForm) {
         commentForm.addEventListener("submit", handleAddComment);
+    }
+    if (readerSearchForm) {
+        readerSearchForm.addEventListener("submit", handleReaderSearch);
+    }
+    if (readerSearchResetBtn) {
+        readerSearchResetBtn.addEventListener("click", () => {
+            if (readerSearchInput) {
+                readerSearchInput.value = "";
+            }
+            clearSearchHighlights();
+            if (readerSearchStatus) {
+                readerSearchStatus.textContent = "";
+            }
+        });
+    }
+    const readerDocToggle = document.getElementById("readerDocToggle");
+    const readerDocPanel = document.getElementById("readerDocPanel");
+    function openDrawer(toggle, panel) {
+        panel.hidden = false;
+        requestAnimationFrame(() => {
+            toggle.setAttribute("aria-expanded", "true");
+            panel.classList.add("open");
+        });
+    }
+
+    function closeDrawer(toggle, panel) {
+        toggle.setAttribute("aria-expanded", "false");
+        panel.classList.remove("open");
+        window.setTimeout(() => {
+            if (toggle.getAttribute("aria-expanded") === "false") {
+                panel.hidden = true;
+            }
+        }, 340);
+    }
+
+    if (readerDocToggle && readerDocPanel) {
+        readerDocToggle.addEventListener("click", () => {
+            const expanded = readerDocToggle.getAttribute("aria-expanded") === "true";
+            if (expanded) {
+                closeDrawer(readerDocToggle, readerDocPanel);
+            } else {
+                openDrawer(readerDocToggle, readerDocPanel);
+            }
+        });
+    }
+    if (readerDocCloseBtn && readerDocPanel && readerDocToggle) {
+        readerDocCloseBtn.addEventListener("click", () => {
+            closeDrawer(readerDocToggle, readerDocPanel);
+        });
     }
     await loadComments();
 
@@ -629,13 +882,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         state.pdfWordSpans = pdfResult.spans;
         state.pdfWordLineKeys = pdfResult.lineKeys || [];
         state.pdfLineMap = pdfResult.lineMap || new Map();
+        state.lineFirstWordIndex = pdfResult.lineFirstWordIndex || new Map();
         state.textReady = true;
         readerStatus.textContent = `Ready - ${state.words.length} words`;
         updateWordDisplay();
         updateControls();
     } else {
         if (!pdfResult.usedPdfJs) {
-            readerStatus.textContent = "PDF text layer unavailable - using OCR text.";
+            readerStatus.textContent = "PDF text layer unavailable - using OCR text. Line click start is not available in fallback mode.";
         } else {
             readerStatus.textContent = "Loading extracted text...";
         }
