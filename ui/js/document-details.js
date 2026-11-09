@@ -225,10 +225,13 @@ async function loadComments() {
 
             const date = new Date(comment.createdAt).toLocaleString();
 
-            li.innerHTML = `
-                <div class="fw-bold small text-muted mb-1">${date}</div>
-                <div>${comment.content}</div>
-            `;
+            // Build DOM nodes instead of innerHTML to prevent stored XSS via comment content
+            const dateNode = document.createElement("div");
+            dateNode.className = "fw-bold small text-muted mb-1";
+            dateNode.textContent = date;
+            const contentNode = document.createElement("div");
+            contentNode.textContent = comment.content ?? "";
+            li.append(dateNode, contentNode);
 
             list.appendChild(li);
         });

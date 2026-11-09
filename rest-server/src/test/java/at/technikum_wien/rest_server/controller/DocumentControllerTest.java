@@ -47,7 +47,7 @@ class DocumentControllerTest {
                 "file",
                 "test.pdf",
                 "application/pdf",
-                "dummy pdf content".getBytes()
+                "%PDF-1.4 dummy pdf content".getBytes()
         );
 
         Document savedDocument = new Document();
@@ -135,7 +135,7 @@ class DocumentControllerTest {
                 "file",
                 "test.pdf",
                 "application/pdf",
-                "dummy".getBytes()
+                "%PDF-1.4 dummy".getBytes()
         );
 
         Mockito.when(documentService.uploadToMinio(Mockito.any()))

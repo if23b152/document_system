@@ -10,6 +10,7 @@ import at.technikum_wien.rest_server.service.DocumentService;
 import at.technikum_wien.rest_server.service.MinioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -57,8 +58,8 @@ public class DocumentController {
             return ResponseEntity.badRequest().build();
         }
 
-        // Only allow PDF uploads
-        if (!"application/pdf".equals(file.getContentType())) {
+        // Only allow PDF uploads (client-supplied content type AND real file signature)
+        if (!"application/pdf".equals(file.getContentType()) || !hasPdfSignature(file)) {
             return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).build();
         }
 
@@ -68,7 +69,7 @@ public class DocumentController {
 
             // Save document metadata in the database (including MinIO key)
             Document saved = documentService.saveDocument(
-                    file.getOriginalFilename(),
+                    sanitizeFileName(file.getOriginalFilename()),
                     file.getSize(),
                     objectKey
             );
@@ -79,8 +80,8 @@ public class DocumentController {
             // Return 201 Created with document metadata
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            // Catch-all error handling (e.g., MinIO or DB failure)
-            e.printStackTrace();
+            // Catch-all error handling (e.g., MinIO or DB failure) - log server-side only
+            log.error("Upload failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -145,8 +146,6 @@ public class DocumentController {
                                 ? document.getFileName()
                                 : "document-" + document.getId() + ".pdf";
 
-                        String safeFileName = fileName.replace("\"", "'");
-
                         InputStream inputStream = minioService.downloadDocument(objectKey);
                         StreamingResponseBody body = outputStream -> {
                             try (inputStream) {
@@ -160,7 +159,11 @@ public class DocumentController {
                         return ResponseEntity.ok()
                                 .contentType(MediaType.APPLICATION_PDF)
                                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                                        "inline; filename=\"" + safeFileName + "\"")
+                                        ContentDisposition.inline()
+                                                .filename(sanitizeFileName(fileName), StandardCharsets.UTF_8)
+                                                .build()
+                                                .toString())
+                                .header("X-Content-Type-Options", "nosniff")
                                 .body(body);
                     } catch (Exception e) {
                         log.error("Failed to load file for document {}: {}", id, e.getMessage(), e);
@@ -208,5 +211,33 @@ public class DocumentController {
         } else {
             return ResponseEntity.notFound().build(); // 404 Not Found
         }
+    }
+
+    /**
+     * Checks the magic bytes of the uploaded file: "%PDF-" must appear within the first 1024 bytes.
+     */
+    private static boolean hasPdfSignature(MultipartFile file) {
+        try (InputStream in = file.getInputStream()) {
+            String head = new String(in.readNBytes(1024), StandardCharsets.ISO_8859_1);
+            return head.contains("%PDF-");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Removes path components and control/special characters from a user supplied file name.
+     */
+    static String sanitizeFileName(String original) {
+        if (original == null || original.isBlank()) {
+            return "document.pdf";
+        }
+        String name = original.replace('\\', '/');
+        name = name.substring(name.lastIndexOf('/') + 1);
+        name = name.replaceAll("[\\p{Cntrl}\"<>|:*?]", "_").trim();
+        if (name.length() > 200) {
+            name = name.substring(0, 200);
+        }
+        return name.isBlank() ? "document.pdf" : name;
     }
 }

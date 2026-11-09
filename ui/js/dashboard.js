@@ -159,7 +159,12 @@ window.addEventListener('DOMContentLoaded', async () => {
             toggleButton.type = "button";
             toggleButton.className = "doc-group-toggle";
             toggleButton.setAttribute("aria-expanded", "true");
-            toggleButton.innerHTML = `<span>${ownerUsername}</span><span class="doc-group-count">${ownerDocs.length}</span>`;
+            const ownerNode = document.createElement("span");
+            ownerNode.textContent = ownerUsername;
+            const countNode = document.createElement("span");
+            countNode.className = "doc-group-count";
+            countNode.textContent = String(ownerDocs.length);
+            toggleButton.append(ownerNode, countNode);
 
             const content = document.createElement("div");
             content.className = "doc-group-content";

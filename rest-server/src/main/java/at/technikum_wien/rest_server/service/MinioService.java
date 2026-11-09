@@ -43,8 +43,9 @@ public class MinioService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
 
-            // Generate a unique object key (UUID + original filename)
-            String objectKey = UUID.randomUUID() + "-" + file.getOriginalFilename();
+            // Generate a unique object key. The user-controlled original filename is NOT used
+            // in the key anymore (avoids path tricks like "../" or control characters).
+            String objectKey = UUID.randomUUID() + ".pdf";
 
             // Upload the file stream to MinIO
             try (InputStream is = file.getInputStream()) {
@@ -53,7 +54,7 @@ public class MinioService {
                                 .bucket(bucketName)
                                 .object(objectKey)
                                 .stream(is, file.getSize(), -1)
-                                .contentType(file.getContentType())
+                                .contentType("application/pdf")
                                 .build()
                 );
             }
@@ -81,7 +82,7 @@ public class MinioService {
             );
             log.info("Deleted file '{}' from MinIO bucket '{}'.", objectKey, bucketName);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to delete file from MinIO: " + objectKey, e);
+            throw new RuntimeException("Failed to delete file from MinIO", e);
         }
     }
 
@@ -100,7 +101,7 @@ public class MinioService {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException("Failed to download file from MinIO: " + objectKey, e);
+            throw new RuntimeException("Failed to download file from MinIO", e);
         }
     }
 }

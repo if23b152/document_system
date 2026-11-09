@@ -24,6 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (response.status === 401) {
             return "Login failed. Check your username and password.";
         }
+        if (response.status === 429) {
+            return "Too many failed login attempts. Please wait a few minutes and try again.";
+        }
         if (response.status >= 500) {
             return "The server is currently unavailable. Please try again in a moment.";
         }

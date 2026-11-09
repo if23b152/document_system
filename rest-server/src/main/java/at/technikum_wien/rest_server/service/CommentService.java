@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service // Marks this class as a Spring service
@@ -29,8 +30,18 @@ public class CommentService {
     /**
      * Adds a new comment to a given document.
      */
+    private static final int MAX_COMMENT_LENGTH = 2000;
+
     @Transactional
     public Comment addComment(Long documentId, String content) {
+
+        // Basic input validation (raw text body, no DTO validation available)
+        if (content == null || content.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Comment must not be empty.");
+        }
+        if (content.length() > MAX_COMMENT_LENGTH) {
+            throw new ResponseStatusException(BAD_REQUEST, "Comment is too long.");
+        }
 
         // Load document or fail if it does not exist
         Document document = documentService.getAccessibleDocumentOrThrow(documentId);

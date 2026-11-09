@@ -14,12 +14,12 @@ services:
     # Environment variables configure the database
     environment:
       POSTGRES_DB: documentdb          # Name of the database to create
-      POSTGRES_USER: postgres          # Default database username
-      POSTGRES_PASSWORD: postgres      # Default password (simple for dev)
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}              # Database username (override via .env)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}      # Database password (override via .env)
 
-    # Expose container port 5432 to the host (so our app can connect)
+    # Expose container port 5432 only on localhost (not reachable from other machines)
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
 
     # Persist data locally using a named Docker volume
     # This prevents data loss when the container restarts or rebuilds
@@ -40,13 +40,13 @@ services:
     # 5672 is used for internal messaging between services
     # 15672 is the management dashboard (accessible via browser)
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
 
     # Default credentials for RabbitMQ
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
 
     # Healthcheck ensures RabbitMQ is up and responding correctly
     # before other services start depending on it
@@ -70,13 +70,13 @@ services:
     # 9000 -> main MinIO API (used by applications to store files)
     # 9001 -> MinIO console (web dashboard at http://localhost:9001)
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
 
     # Environment variables to set admin credentials
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
 
     # Store uploaded files in a named volume (persists between restarts)
     volumes:
@@ -103,24 +103,29 @@ services:
 
     # Map internal port 8081 of the container to port 8081 on the host
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
 
     # Environment variables used by Spring Boot for configuration
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb  # Connect to PostgreSQL DB
-      SPRING_DATASOURCE_USERNAME: postgres  # Database username
-      SPRING_DATASOURCE_PASSWORD: postgres  # Database password
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}  # Database username
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}  # Database password
       SPRING_RABBITMQ_HOST: rabbitmq        # RabbitMQ host name (container name)
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       SPRING_RABBITMQ_PORT: 5672            # RabbitMQ communication port
 
       # MinIO connection details for storing uploaded files
       MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: documents # Bucket name for document storage
 
       # Elasticsearch
       ELASTICSEARCH_HOST: http://elasticsearch:9200
+
+      # Optional: create the "admin" account with this password on startup
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD:-}
 
     # Define which containers must start before this one
     depends_on:
@@ -144,7 +149,7 @@ services:
 
     # Map container’s internal port 8082 to host port 8082
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
 
     # Tell Docker to read this file
     env_file:
@@ -153,15 +158,17 @@ services:
     # Environment variables for the Spring Boot worker service
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq # Connect to RabbitMQ (message queue)
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-guest}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
       SPRING_RABBITMQ_PORT: 5672 # Default RabbitMQ port
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/documentdb # Connect to PostgreSQL
-      SPRING_DATASOURCE_USERNAME: postgres # Database username
-      SPRING_DATASOURCE_PASSWORD: postgres # Database password
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres} # Database username
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres} # Database password
 
       # MinIO settings for downloading and processing stored files
       MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
       MINIO_BUCKET: documents  # Same bucket as used by REST server
         
       # Elasticsearch
@@ -209,9 +216,9 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - bootstrap.memory_lock=false
 
-    # Expose Elasticsearch default port
+    # Expose Elasticsearch default port (localhost only - security is disabled for this single-node dev setup)
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
 
     # Persist Elasticsearch index data
     volumes:
