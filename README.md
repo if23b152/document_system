@@ -1,197 +1,221 @@
-# Document System
+<div align="center">
 
-A document management system for uploading, storing, searching, and reading PDF documents with a microservice-based architecture.
+# Document Management System
 
-The project combines a Spring Boot REST backend, an asynchronous worker service, object storage, full-text search, and a lightweight browser UI. Uploaded documents are stored in MinIO, indexed for search, processed asynchronously for OCR, and then made available for reading, metadata editing, and comments.
+**Upload, OCR, AI summaries and full-text search for PDF documents – built as an event-driven microservice system**
+
+![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F?logo=springboot&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-messaging-FF6600?logo=rabbitmq&logoColor=white)
+![Elasticsearch](https://img.shields.io/badge/Elasticsearch-8.12-005571?logo=elasticsearch)
+![MinIO](https://img.shields.io/badge/MinIO-S3%20storage-C72E49?logo=minio&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+
+</div>
+
+---
+
+Users sign in, upload PDFs and get them back **searchable**: every document is stored in object storage, processed asynchronously with **Tesseract OCR**, summarised by **Google Gemini** and indexed in **Elasticsearch**. A lightweight web UI lets users browse, edit metadata, comment and read the extracted text in a focused speed-reading mode.
+
+## Contents
+
+- [Highlights](#highlights)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Configuration](#configuration)
+- [API](#api)
+- [Security](#security)
+- [Project structure](#project-structure)
+- [Development](#development)
+- [Roadmap](#roadmap)
 
 ## Highlights
 
-- PDF upload and document management
-- Metadata editing for filename, summary, and tags
-- Full-text document search with Elasticsearch
-- Asynchronous processing via RabbitMQ
-- OCR-based text extraction for uploaded PDFs
-- Browser-based reading mode for extracted document text
-- Comment system for document collaboration
-- Docker Compose setup for the full local stack
+| | |
+|---|---|
+| 🔐 **Accounts** | registration, login, session-based auth, per-user document access, optional admin account, demo guest login |
+| 📄 **Documents** | PDF upload, in-browser viewer, edit filename / summary / tags, delete |
+| ⚙️ **Async pipeline** | RabbitMQ decouples upload from processing – the API stays fast while OCR runs in the background |
+| 🔎 **OCR + AI** | Tesseract extracts text, Gemini generates a short summary |
+| 🧭 **Search** | full-text and fuzzy search over content and summaries via Elasticsearch |
+| 💬 **Comments** | discuss documents directly on the details page |
+| 📖 **Reader mode** | split view with PDF and an RSVP speed reader (adjustable WPM, progress saved per document) |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI[Browser UI] --> REST[REST Server]
-    REST --> PG[(PostgreSQL)]
-    REST --> MINIO[(MinIO)]
-    REST --> RABBIT[(RabbitMQ)]
-    RABBIT --> WORKER[Worker Service]
+    UI["UI<br/>Nginx · HTML/CSS/JS"] -->|/api| REST["REST server<br/>Spring Boot"]
+    REST --> PG[(PostgreSQL<br/>metadata, users, comments)]
+    REST --> MINIO[(MinIO<br/>PDF files)]
+    REST -->|OCR request| MQ{{RabbitMQ}}
+    MQ --> WORKER["Worker service<br/>Spring Boot"]
     WORKER --> MINIO
-    WORKER --> ES[(Elasticsearch)]
-    WORKER --> PG
-    REST --> ES
+    WORKER -->|OCR| TESS[Tesseract]
+    WORKER -->|summary| GEMINI[Google Gemini]
+    WORKER --> ES[(Elasticsearch<br/>search index)]
+    WORKER -->|result| MQ
+    MQ -->|result| REST
+    REST -->|search| ES
 ```
 
-## How It Works
+**Upload flow**
 
-1. A user uploads a PDF through the UI.
-2. The REST server stores the file in MinIO and saves metadata in PostgreSQL.
-3. The REST server publishes a processing message to RabbitMQ.
-4. The worker service consumes the message, extracts text with OCR, and updates search data.
-5. The UI can then display the file, show metadata, load extracted text, and search indexed content.
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant R as REST server
+    participant S as MinIO
+    participant Q as RabbitMQ
+    participant W as Worker
+    participant E as Elasticsearch
 
-## Tech Stack
-
-### Backend
-
-- Java 21
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- Spring AMQP
-- MapStruct
-- Lombok
-
-### Infrastructure
-
-- PostgreSQL
-- RabbitMQ
-- MinIO
-- Elasticsearch
-- Docker Compose
-
-### Processing
-
-- Tess4J / Tesseract OCR
-- Optional GenAI integration in the worker service
-
-### Frontend
-
-- HTML
-- CSS
-- Vanilla JavaScript
-- Nginx
-
-## Project Structure
-
-```text
-document_system/
-|-- rest-server/      REST API, document metadata, file streaming, search endpoints
-|-- worker-service/   Async processing, OCR, indexing, enrichment
-|-- ui/               Static frontend served through Nginx
-|-- docker-compose.yml
-|-- pom.xml
+    U->>R: POST /api/documents/upload (PDF)
+    R->>S: store file
+    R->>R: save metadata (PostgreSQL)
+    R->>Q: OcrRequestMessage
+    R-->>U: 201 Created
+    Q->>W: consume message
+    W->>S: download PDF
+    W->>W: OCR (Tesseract) + summary (Gemini)
+    W->>E: index text + summary
+    W->>Q: ResultMessage
+    Q->>R: consume result
+    R->>R: store summary / status
 ```
 
-## Main Features
+UML class and dependency diagrams for both services are in the repository root (`rest-server UML diagram*.png`, `worker-service UML diagram*.png`).
 
-### Document Dashboard
+## Quick start
 
-- List all uploaded documents
-- Open PDFs directly in the browser
-- Delete documents
-- Search documents by indexed content
-
-### Document Details
-
-- View document metadata
-- Edit filename, summary, and tags
-- Open the original PDF
-- Add and display comments
-
-### Reader Mode
-
-- Load extracted OCR text for a document
-- Read text word-by-word in a focused reading interface
-- Control reading speed
-- Preserve reading progress in local storage
-
-## API Overview
-
-The REST server exposes endpoints under `/api`.
-
-### Document endpoints
-
-- `POST /api/documents/upload`
-- `GET /api/documents`
-- `GET /api/documents/{id}`
-- `PUT /api/documents/{id}`
-- `DELETE /api/documents/{id}`
-- `GET /api/documents/{id}/file`
-- `GET /api/documents/{id}/text`
-- `GET /api/documents/search?query=...`
-
-### Comment endpoints
-
-- `POST /api/comments/document/{documentId}`
-- `GET /api/comments/document/{documentId}`
-- `DELETE /api/comments/{commentId}`
-
-## Running The Project
-
-### Prerequisites
-
-- Docker
-- Docker Compose
-
-### Start the full stack
+**Requirements:** Docker Desktop (≈ 4 GB RAM for Elasticsearch and the services) and a Google Gemini API key for summaries.
 
 ```bash
+# 1. Configuration
+cp .env.example .env            # change the passwords
+cp api.env.example api.env      # insert your GOOGLE_API_KEY
+
+# 2. Build and start the full stack
 docker compose up --build
 ```
 
-This starts:
+Open **http://localhost:8080**, register an account (or use the guest login) and upload a PDF.
 
-- `ui` on `http://localhost:8080`
-- `rest-server` on `http://localhost:8081`
-- `worker-service` on `http://localhost:8082`
-- `postgres` on `localhost:5432`
-- `rabbitmq` on `http://localhost:15672`
-- `minio` on `http://localhost:9001`
-- `elasticsearch` on `http://localhost:9200`
+| Service | URL |
+|---|---|
+| Web UI | http://localhost:8080 |
+| REST API | http://localhost:8081/api |
+| Worker | http://localhost:8082 |
+| RabbitMQ management | http://localhost:15672 |
+| MinIO console | http://localhost:9001 |
+| Elasticsearch | http://localhost:9200 |
+| PostgreSQL | `localhost:5432`, database `documentdb` |
 
-## Configuration Notes
+All ports are bound to `127.0.0.1` only.
 
-The services are wired together through Docker Compose.
+```bash
+docker compose down        # stop
+docker compose down -v     # stop and delete all data (DB, files, index)
 
-Important runtime dependencies include:
+# inspect the database
+docker compose exec postgres psql -U postgres -d documentdb -c '\dt'
+```
 
-- PostgreSQL for metadata persistence
-- MinIO for PDF file storage
-- RabbitMQ for async job dispatch
-- Elasticsearch for full-text search
+## Configuration
 
-The worker service also supports external AI-based processing through an API key loaded from environment variables. If you want to use that part of the pipeline, make sure the required variable is available in `api.env`.
+| File | Variable | Purpose |
+|---|---|---|
+| `.env` | `POSTGRES_USER`, `POSTGRES_PASSWORD` | database credentials |
+| `.env` | `RABBITMQ_USER`, `RABBITMQ_PASSWORD` | message broker credentials |
+| `.env` | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | object storage credentials (password ≥ 8 chars) |
+| `.env` | `APP_ADMIN_PASSWORD` | optional – creates the `admin` account on first start |
+| `api.env` | `GOOGLE_API_KEY` | Gemini API key used by the worker service |
 
-## Development Notes
+Both files are git-ignored; templates: [`.env.example`](.env.example), [`api.env.example`](api.env.example).
 
-- The REST server is responsible for upload, metadata management, comments, file delivery, and search orchestration.
-- The worker service handles background processing and indexing.
-- The frontend is intentionally lightweight and does not require a JS framework.
-- The project is organized as a multi-module Maven setup.
+## API
 
-## Why This Project Matters
+All endpoints are under `/api`. Except for `/api/auth/**`, every request requires a valid session.
 
-This project demonstrates more than CRUD. It combines:
+**Auth**
 
-- synchronous and asynchronous service communication
-- storage and search infrastructure
-- OCR-based document processing
-- backend API design
-- microservice-style decomposition
-- an end-to-end usable interface
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/auth/register` | create an account |
+| `POST` | `/api/auth/login` | log in (starts a session) |
+| `POST` | `/api/auth/try` | log in with a temporary guest account |
+| `POST` | `/api/auth/logout` | end the session |
+| `GET` | `/api/auth/me` | current user |
 
-## Future Improvements
+**Documents**
 
-- Authentication and user roles
-- Better document versioning
-- Advanced filtering and faceted search
-- Highlighted search matches in the UI
-- Processing status indicators per document
-- Test coverage expansion and CI pipeline
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/documents/upload` | upload a PDF (multipart) |
+| `GET` | `/api/documents` | list own documents |
+| `GET` | `/api/documents/{id}` | document metadata |
+| `PUT` | `/api/documents/{id}` | update filename, summary, tags |
+| `DELETE` | `/api/documents/{id}` | delete document |
+| `GET` | `/api/documents/{id}/file` | stream the original PDF |
+| `GET` | `/api/documents/{id}/text` | extracted OCR text |
+| `GET` | `/api/documents/search?query=…` | full-text search |
 
-## Screens and Diagrams
+**Comments**
 
-The repository also contains UML diagrams for the REST server and worker service, which help explain the internal structure and dependencies.
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/comments/document/{documentId}` | add a comment |
+| `GET` | `/api/comments/document/{documentId}` | list comments |
+| `DELETE` | `/api/comments/{commentId}` | delete a comment |
 
-## Author
+## Security
 
-Created by Ibrahim Barakat.
+- Passwords hashed with **BCrypt**; login attempts are rate-limited per account
+- Session cookie `HttpOnly`, `SameSite=Strict`, 60 min timeout, session ID rotated on login
+- Users only see and modify **their own** documents and comments; `admin` role for moderation
+- Upload size limits and comment length validation
+- No secrets in the repository – all credentials come from `.env` / `api.env`
+- Every container port is bound to `localhost`
+
+> Elasticsearch runs without X-Pack security in this single-node development setup and should not be exposed beyond localhost.
+
+## Project structure
+
+```text
+document_system/
+├── rest-server/            REST API (Spring Boot)
+│   └── src/main/java/.../
+│       ├── config/         Security, MinIO, RabbitMQ, Elasticsearch
+│       ├── controller/     Auth, Document, Comment, Search
+│       ├── service/        business logic, login attempts, storage, search
+│       ├── listener/       consumes worker results
+│       ├── producer/       publishes OCR requests
+│       ├── model/          entities and DTOs
+│       ├── mapper/         MapStruct mappers
+│       └── repository/     Spring Data JPA
+├── worker-service/         OCR, Gemini summary, Elasticsearch indexing
+├── ui/                     static frontend (HTML/CSS/JS) served by Nginx
+├── docker-compose.yml      full local stack
+├── .env.example            infrastructure credentials template
+└── api.env.example         Gemini API key template
+```
+
+## Development
+
+```bash
+# run the tests of the REST server
+cd rest-server && ./mvnw test
+
+# rebuild a single service after code changes
+docker compose up --build rest-server
+```
+
+The root [`pom.xml`](pom.xml) aggregates the REST server; the worker service is a standalone Maven project with its own wrapper (`worker-service/mvnw`). In IntelliJ, import `worker-service/pom.xml` as an additional Maven module.
+
+## Roadmap
+
+- processing status indicator per document in the UI
+- highlighted search matches and faceted filters
+- document versioning
+- CI pipeline with automated tests

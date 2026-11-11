@@ -26,6 +26,13 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+    # Healthcheck so the Spring services only start once the database accepts connections
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d documentdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # -----------------------------------------------------------------
   # 2. Messaging Broker Service (RabbitMQ)
   # -----------------------------------------------------------------
@@ -87,7 +94,7 @@ services:
 
     # Healthcheck makes sure MinIO is live and responding to HTTP requests
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "mc", "ready", "local"]
       interval: 30s    # Run the check every 30 seconds
       timeout: 10s     # Wait 10 seconds for a response
       retries: 3       # Retry 3 times before marking unhealthy
@@ -130,7 +137,7 @@ services:
     # Define which containers must start before this one
     depends_on:
       postgres:
-        condition: service_started # Wait until PostgreSQL starts
+        condition: service_healthy # Wait until PostgreSQL accepts connections
       rabbitmq:
         condition: service_healthy # Wait until RabbitMQ passes health check
       minio:
@@ -179,7 +186,7 @@ services:
       rabbitmq:
         condition: service_healthy # Wait for RabbitMQ health check
       postgres:
-        condition: service_started # Wait until PostgreSQL is up
+        condition: service_healthy # Wait until PostgreSQL accepts connections
       minio:
         condition: service_healthy # Wait for MinIO health check
       elasticsearch:
@@ -193,7 +200,7 @@ services:
 
     # Map host port 8080 to container’s internal web server port 80
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
     build:
       context: ./ui # Folder containing the frontend code

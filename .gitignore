@@ -41,3 +41,7 @@ build/
 # Ignore environment files
 .env
 api.env
+
+### Local files ###
+.idea/
+_local_backup/
