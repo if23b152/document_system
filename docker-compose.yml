@@ -19,7 +19,7 @@ services:
 
     # Expose container port 5432 only on localhost (not reachable from other machines)
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
 
     # Persist data locally using a named Docker volume
     # This prevents data loss when the container restarts or rebuilds

@@ -4,11 +4,13 @@ import at.technikum_wien.rest_server.mapper.DocumentMapper;
 import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.model.DocumentResponse;
 import at.technikum_wien.rest_server.service.DocumentService;
+import at.technikum_wien.rest_server.service.MinioService;
 import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -23,6 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(DocumentController.class)
+@AutoConfigureMockMvc(addFilters = false) // controller logic only; security is configured in SecurityConfig
 class DocumentControllerTest {
 
     @Autowired
@@ -33,6 +36,9 @@ class DocumentControllerTest {
 
     @MockitoBean
     private DocumentMapper documentMapper;
+
+    @MockitoBean
+    private MinioService minioService;
 
     @Autowired
     private ObjectMapper objectMapper;

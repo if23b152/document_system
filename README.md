@@ -11,6 +11,7 @@
 ![MinIO](https://img.shields.io/badge/MinIO-S3%20storage-C72E49?logo=minio&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+[![CI](https://github.com/if23b152/document_system/actions/workflows/ci.yml/badge.svg)](https://github.com/if23b152/document_system/actions/workflows/ci.yml)
 
 </div>
 
@@ -130,6 +131,7 @@ docker compose exec postgres psql -U postgres -d documentdb -c '\dt'
 | `.env` | `RABBITMQ_USER`, `RABBITMQ_PASSWORD` | message broker credentials |
 | `.env` | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | object storage credentials (password ≥ 8 chars) |
 | `.env` | `APP_ADMIN_PASSWORD` | optional – creates the `admin` account on first start |
+| `.env` | `POSTGRES_HOST_PORT` | optional – host port for PostgreSQL if `5432` is already in use (default `5432`) |
 | `api.env` | `GOOGLE_API_KEY` | Gemini API key used by the worker service |
 
 Both files are git-ignored; templates: [`.env.example`](.env.example), [`api.env.example`](api.env.example).
@@ -204,8 +206,9 @@ document_system/
 ## Development
 
 ```bash
-# run the tests of the REST server
-cd rest-server && ./mvnw test
+# run the tests (no running infrastructure needed – external services are mocked)
+(cd rest-server && ./mvnw test)       # 29 tests
+(cd worker-service && ./mvnw test)    # 9 tests
 
 # rebuild a single service after code changes
 docker compose up --build rest-server
@@ -218,4 +221,4 @@ The root [`pom.xml`](pom.xml) aggregates the REST server; the worker service is 
 - processing status indicator per document in the UI
 - highlighted search matches and faceted filters
 - document versioning
-- CI pipeline with automated tests
+- end-to-end tests against the full Docker stack
