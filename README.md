@@ -1,5 +1,7 @@
 # Document System
 
+[![CI](https://github.com/if23b152/document_system/actions/workflows/ci.yml/badge.svg)](https://github.com/if23b152/document_system/actions/workflows/ci.yml)
+
 A document management system for uploading, storing, searching, and reading PDF documents with a microservice-based architecture.
 
 The project combines a Spring Boot REST backend, an asynchronous worker service, object storage, full-text search, and a lightweight browser UI. Uploaded documents are stored in MinIO, indexed for search, processed asynchronously for OCR, and then made available for reading, metadata editing, and comments.
