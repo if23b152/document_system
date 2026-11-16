@@ -9,9 +9,12 @@ public sealed class NotesStore(AppData appData)
 {
     private string FileFor(string key) => appData.PathOf("notes", key + ".json");
 
-    public Note? Load(string filePath)
+    public Note? Load(string filePath) => LoadByKey(FileKey.Of(filePath));
+
+    /// <summary>Loads by an already computed <see cref="FileKey"/> (avoids hashing large files again).</summary>
+    public Note? LoadByKey(string fileKey)
     {
-        string path = FileFor(FileKey.Of(filePath));
+        string path = FileFor(fileKey);
         return File.Exists(path) ? appData.ReadJson<Note?>(path, () => null) : null;
     }
 
