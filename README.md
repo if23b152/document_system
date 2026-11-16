@@ -12,6 +12,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 [![CI](https://github.com/if23b152/document_system/actions/workflows/ci.yml/badge.svg)](https://github.com/if23b152/document_system/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/if23b152/document_system/actions/workflows/codeql.yml/badge.svg)](https://github.com/if23b152/document_system/actions/workflows/codeql.yml)
 
 </div>
 
@@ -210,11 +211,24 @@ document_system/
 (cd rest-server && ./mvnw test)       # 29 tests
 (cd worker-service && ./mvnw test)    # 9 tests
 
+# tests + coverage report (target/site/jacoco/index.html)
+(cd rest-server && ./mvnw verify)
+
 # rebuild a single service after code changes
 docker compose up --build rest-server
 ```
 
 The root [`pom.xml`](pom.xml) aggregates the REST server; the worker service is a standalone Maven project with its own wrapper (`worker-service/mvnw`). In IntelliJ, import `worker-service/pom.xml` as an additional Maven module.
+
+### Continuous integration
+
+| Workflow | Jobs | Trigger |
+|---|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | build, tests and JaCoCo coverage per service · Docker image build for `rest-server`, `worker-service`, `ui` · `docker compose config` with the example env files | push to `main`, pull requests, manual |
+| [`codeql.yml`](.github/workflows/codeql.yml) | CodeQL security analysis for Java and JavaScript | push, pull requests, weekly |
+| [`dependabot.yml`](.github/dependabot.yml) | update PRs for Maven dependencies, Docker base images and actions | weekly / monthly |
+
+Every CI run shows a test and coverage summary; surefire and coverage reports are attached as artifacts.
 
 ## Roadmap
 
