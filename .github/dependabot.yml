@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /rest-server
+    schedule:
+      interval: weekly
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: maven
+    directory: /worker-service
+    schedule:
+      interval: weekly
+    groups:
+      spring:
+        patterns: ["org.springframework*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directories: [/rest-server, /worker-service, /ui]
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
