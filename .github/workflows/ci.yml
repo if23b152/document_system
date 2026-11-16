@@ -65,3 +65,24 @@ jobs:
           name: coverage-${{ matrix.service }}
           path: ${{ matrix.service }}/target/site/jacoco/
           retention-days: 14
+
+  docker:
+    name: docker image (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [rest-server, worker-service, ui]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      # Build only (no push) to catch broken Dockerfiles; layers are cached between runs
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service }}
+          push: false
+          tags: document-system/${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
