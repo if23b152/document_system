@@ -1,0 +1,4 @@
+# Only html/, css/, js/ and nginx.conf are needed in the image
+Dockerfile
+.dockerignore
+*.md

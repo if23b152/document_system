@@ -1,0 +1,5 @@
+# Keep the build context small; the image builds from source
+target/
+.idea/
+*.iml
+*.log
