@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Run stage (JRE only - no compiler/tools needed at runtime)
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 # Run as unprivileged user instead of root
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
