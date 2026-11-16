@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    COM preview handler loaded by Explorer (prevhost.exe). It is deliberately tiny and has no UI
+    dependency: it only uses the base runtime that is installed machine-wide and hosts the
+    window of the self-contained companion app (DmsExplorer.exe).
+  -->
+  <PropertyGroup>
+    <!-- net8.0-windows only needs the base runtime (no WinForms/WPF) -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableComHosting>true</EnableComHosting>
+    <!-- Run on newer machine-wide runtimes too -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+</Project>
