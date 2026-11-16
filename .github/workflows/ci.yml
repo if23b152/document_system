@@ -35,9 +35,7 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Build and test
-        run: |
-          chmod +x mvnw
-          ./mvnw -B verify
+        run: ./mvnw -B verify
 
       - name: Test and coverage summary
         if: always()
