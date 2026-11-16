@@ -4,11 +4,22 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+# Read-only token by default; jobs request more only where needed
+permissions:
+  contents: read
+
+# Cancel superseded runs of the same branch / pull request
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     name: ${{ matrix.service }}
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
