@@ -1,0 +1,31 @@
+namespace DmsExplorer.Core;
+
+public sealed record Note(string Text, string SourcePath, DateTime UpdatedUtc);
+
+/// <summary>
+/// Stores one note per document (keyed by <see cref="FileKey"/>) under %APPDATA%\DmsExplorer\notes.
+/// </summary>
+public sealed class NotesStore(AppData appData)
+{
+    private string FileFor(string key) => appData.PathOf("notes", key + ".json");
+
+    public Note? Load(string filePath)
+    {
+        string path = FileFor(FileKey.Of(filePath));
+        return File.Exists(path) ? appData.ReadJson<Note?>(path, () => null) : null;
+    }
+
+    public bool HasNote(string filePath) => !string.IsNullOrWhiteSpace(Load(filePath)?.Text);
+
+    /// <summary>Saves the note; an empty text deletes it.</summary>
+    public void Save(string filePath, string text)
+    {
+        string path = FileFor(FileKey.Of(filePath));
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            File.Delete(path);
+            return;
+        }
+        AppData.WriteJson(path, new Note(text, Path.GetFullPath(filePath), DateTime.UtcNow));
+    }
+}

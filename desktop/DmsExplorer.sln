@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FCD94AC3-2BD1-4BD4-BBA2-699007C0EFF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DmsExplorer.Core", "src\DmsExplorer.Core\DmsExplorer.Core.csproj", "{CD9E1401-FA65-4714-956D-18D5539D2DEF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{D2A1B1BE-5F18-43DF-B2E8-353CADB7D849}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DmsExplorer.Core.Tests", "tests\DmsExplorer.Core.Tests\DmsExplorer.Core.Tests.csproj", "{901E73C6-63D2-4773-83A5-1DD9B06A509B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CD9E1401-FA65-4714-956D-18D5539D2DEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD9E1401-FA65-4714-956D-18D5539D2DEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD9E1401-FA65-4714-956D-18D5539D2DEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD9E1401-FA65-4714-956D-18D5539D2DEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{901E73C6-63D2-4773-83A5-1DD9B06A509B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{901E73C6-63D2-4773-83A5-1DD9B06A509B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{901E73C6-63D2-4773-83A5-1DD9B06A509B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{901E73C6-63D2-4773-83A5-1DD9B06A509B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CD9E1401-FA65-4714-956D-18D5539D2DEF} = {FCD94AC3-2BD1-4BD4-BBA2-699007C0EFF4}
+		{901E73C6-63D2-4773-83A5-1DD9B06A509B} = {D2A1B1BE-5F18-43DF-B2E8-353CADB7D849}
+	EndGlobalSection
+EndGlobal
