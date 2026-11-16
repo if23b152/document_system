@@ -79,7 +79,7 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <!-- Use the latest stable version for your project. As of now, this is a common version. -->
-            <version>8.5.10</version>
+            <version>9.0.4</version>
         </dependency>
 
         <!-- Elasticsearch integration -->
