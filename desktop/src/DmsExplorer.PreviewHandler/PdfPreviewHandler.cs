@@ -98,10 +98,10 @@ public sealed class PdfPreviewHandler : IPreviewHandler, IInitializeWithFile, IO
         _preview = null;
     }
 
-    /// <summary>Path written by "DmsExplorer register"; falls back to the folder above the handler.</summary>
+    /// <summary>Path written by install.ps1; falls back to the folder above the handler.</summary>
     private static string CompanionPath()
     {
-        if (Registry.GetValue(@"HKEY_CURRENT_USER\Software\DmsExplorer", "AppPath", null) is string path && File.Exists(path))
+        if (Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\DmsExplorer", "AppPath", null) is string path && File.Exists(path))
         {
             return path;
         }
