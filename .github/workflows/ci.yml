@@ -86,3 +86,17 @@ jobs:
           tags: document-system/${{ matrix.service }}:ci
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  compose:
+    name: docker compose config
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      # The templates must contain every variable the stack needs
+      - name: Validate compose file with the example environment
+        run: |
+          cp .env.example .env
+          cp api.env.example api.env
+          docker compose config --quiet
+          echo "Services: $(docker compose config --services | tr '\n' ' ')"
