@@ -38,3 +38,32 @@ jobs:
         run: |
           chmod +x mvnw
           ./mvnw -B verify
+
+      - name: Test and coverage summary
+        if: always()
+        run: |
+          {
+            echo "### ${{ matrix.service }}"
+            echo
+            awk -F'"' '/<testsuite /{for (i=1;i<NF;i++){if($i~/ tests=$/)t+=$(i+1); if($i~/ failures=$/)f+=$(i+1); if($i~/ errors=$/)e+=$(i+1); if($i~/ skipped=$/)s+=$(i+1)}} END {printf "| Tests | Failures | Errors | Skipped |\n|---:|---:|---:|---:|\n| %d | %d | %d | %d |\n", t, f, e, s}' target/surefire-reports/TEST-*.xml 2>/dev/null || echo "No test reports found."
+            echo
+            if [ -f target/site/jacoco/jacoco.csv ]; then
+              awk -F, 'NR>1 {m+=$8; c+=$9} END {if (m+c) printf "Line coverage: **%.1f %%** (%d of %d lines)\n", 100*c/(m+c), c, m+c}' target/site/jacoco/jacoco.csv
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/site/jacoco/
+          retention-days: 14
