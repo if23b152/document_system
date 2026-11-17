@@ -3,6 +3,7 @@ package at.technikum_wien.rest_server.service;
 import at.technikum_wien.rest_server.model.AppUser;
 import at.technikum_wien.rest_server.model.RegisterRequest;
 import at.technikum_wien.rest_server.model.UserRole;
+import at.technikum_wien.rest_server.repository.ApiTokenRepository;
 import at.technikum_wien.rest_server.repository.AppUserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
@@ -38,15 +40,18 @@ public class AppUserService implements UserDetailsService {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApiTokenRepository apiTokenRepository;
 
     // Optional: admin account is only created from an environment variable (APP_ADMIN_PASSWORD)
     @Value("${app.admin.password:}")
     private String adminPassword;
 
     public AppUserService(AppUserRepository appUserRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          ApiTokenRepository apiTokenRepository) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
+        this.apiTokenRepository = apiTokenRepository;
     }
 
     public AppUser register(RegisterRequest request) {
@@ -104,7 +109,10 @@ public class AppUserService implements UserDetailsService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
+    @Transactional
     public void deleteUser(AppUser user) {
+        // Access tokens reference the user, remove them first
+        apiTokenRepository.deleteAllByUser(user);
         appUserRepository.delete(user);
     }
 
