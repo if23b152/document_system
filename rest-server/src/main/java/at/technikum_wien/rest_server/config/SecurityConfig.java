@@ -1,5 +1,6 @@
 package at.technikum_wien.rest_server.config;
 
+import at.technikum_wien.rest_server.service.ApiTokenService;
 import at.technikum_wien.rest_server.service.AppUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
@@ -23,8 +25,13 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                                   DaoAuthenticationProvider authenticationProvider) throws Exception {
+                                                   DaoAuthenticationProvider authenticationProvider,
+                                                   ApiTokenService apiTokenService,
+                                                   AppUserService appUserService) throws Exception {
         http
+                // Desktop clients authenticate with a personal access token instead of a session
+                .addFilterBefore(new ApiTokenAuthenticationFilter(apiTokenService, appUserService),
+                        UsernamePasswordAuthenticationFilter.class)
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .headers(headers -> headers
