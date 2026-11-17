@@ -8,7 +8,8 @@ internal static class Program
         "DmsExplorer – Document System integration for Windows Explorer\n\n" +
         "  DmsExplorer preview <file.pdf> [--parent <hwnd>]\n" +
         "  DmsExplorer reader <file.pdf>\n" +
-        "  DmsExplorer notes <file.pdf>";
+        "  DmsExplorer notes <file.pdf>\n" +
+        "  DmsExplorer connect";
 
     [STAThread]
     private static int Main(string[] args)
@@ -29,6 +30,9 @@ internal static class Program
                 return 0;
             case "notes" when file != null:
                 Application.Run(new NotesForm(file, appData));
+                return 0;
+            case "connect":
+                Application.Run(new ConnectForm(appData));
                 return 0;
             default:
                 MessageBox.Show(Usage, "DmsExplorer", MessageBoxButtons.OK, MessageBoxIcon.Information);
