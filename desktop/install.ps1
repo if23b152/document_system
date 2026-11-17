@@ -132,7 +132,8 @@ function Install-Machine {
     $entries = @(
         @('01reader', 'Fast reader', 'reader'),
         @('02notes', 'Notes', 'notes'),
-        @('03preview', 'Open preview window', 'preview')
+        @('03preview', 'Open preview window', 'preview'),
+        @('04open', 'Open in DMS', 'open')
     )
     foreach ($e in $entries) {
         Set-Key $hklm "$contextMenu\shell\$($e[0])" @{ MUIVerb = $e[1] }

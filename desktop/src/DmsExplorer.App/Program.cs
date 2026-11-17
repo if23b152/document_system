@@ -9,6 +9,7 @@ internal static class Program
         "  DmsExplorer preview <file.pdf> [--parent <hwnd>]\n" +
         "  DmsExplorer reader <file.pdf>\n" +
         "  DmsExplorer notes <file.pdf>\n" +
+        "  DmsExplorer open <file.pdf>        (open in the DMS, upload if needed)\n" +
         "  DmsExplorer connect";
 
     [STAThread]
@@ -30,6 +31,9 @@ internal static class Program
                 return 0;
             case "notes" when file != null:
                 Application.Run(new NotesForm(file, appData));
+                return 0;
+            case "open" when file != null:
+                Application.Run(new OpenInDmsForm(file, appData));
                 return 0;
             case "connect":
                 Application.Run(new ConnectForm(appData));
