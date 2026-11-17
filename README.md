@@ -163,6 +163,7 @@ All endpoints are under `/api`. Except for `/api/auth/**`, every request require
 | `GET` | `/api/documents/{id}/file` | stream the original PDF |
 | `GET` | `/api/documents/{id}/text` | extracted OCR text |
 | `GET` | `/api/documents/search?query=…` | full-text search |
+| `GET` | `/api/documents/by-hash/{sha256}` | find a document by the SHA-256 of its content (used by the [Explorer integration](desktop/README.md)) |
 
 **Comments**
 
