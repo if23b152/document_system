@@ -139,7 +139,11 @@ Both files are git-ignored; templates: [`.env.example`](.env.example), [`api.env
 
 ## API
 
-All endpoints are under `/api`. Except for `/api/auth/**`, every request requires a valid session.
+All endpoints are under `/api`. Except for `/api/auth/**`, every request requires a valid session – or, for clients without a browser such as the [Explorer integration](desktop/README.md), a personal access token:
+
+```bash
+curl -H "Authorization: Bearer dms_…" http://localhost:8081/api/documents
+```
 
 **Auth**
 
@@ -150,6 +154,14 @@ All endpoints are under `/api`. Except for `/api/auth/**`, every request require
 | `POST` | `/api/auth/try` | log in with a temporary guest account |
 | `POST` | `/api/auth/logout` | end the session |
 | `GET` | `/api/auth/me` | current user |
+
+**Access tokens** (session only – a token cannot manage tokens)
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/tokens` | create a token `{ "name": "Laptop", "validDays": 90 }`; the secret is returned **once** |
+| `GET` | `/api/tokens` | list own tokens (name, prefix, created, expires, last used) |
+| `DELETE` | `/api/tokens/{id}` | revoke a token |
 
 **Documents**
 
@@ -176,6 +188,7 @@ All endpoints are under `/api`. Except for `/api/auth/**`, every request require
 
 - Passwords hashed with **BCrypt**; login attempts are rate-limited per account
 - Session cookie `HttpOnly`, `SameSite=Strict`, 60 min timeout, session ID rotated on login
+- Access tokens: 256 random bits, only their SHA-256 is stored, expire after max. 365 days, revocable, no session is created for token requests
 - Users only see and modify **their own** documents and comments; `admin` role for moderation
 - Upload size limits and comment length validation
 - No secrets in the repository – all credentials come from `.env` / `api.env`
