@@ -30,6 +30,9 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     Optional<Document> findByIdAndOwnerUsername(Long id, String username);
 
+    // Documents uploaded before the content hash was recorded
+    List<Document> findByContentSha256IsNull();
+
     // The same file can be uploaded more than once: return the newest copy
     Optional<Document> findFirstByContentSha256OrderByUploadTimestampDesc(String contentSha256);
 
