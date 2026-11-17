@@ -189,6 +189,20 @@ public class DocumentService {
         );
     }
 
+    /**
+     * Finds the newest accessible document with the given content hash
+     * (own documents only, admins see all).
+     */
+    public Optional<Document> getDocumentByContentHash(String contentSha256) {
+        if (appUserService.currentUserIsAdmin()) {
+            return documentRepository.findFirstByContentSha256OrderByUploadTimestampDesc(contentSha256);
+        }
+        return documentRepository.findFirstByContentSha256AndOwnerUsernameOrderByUploadTimestampDesc(
+                contentSha256,
+                appUserService.getCurrentUser().getUsername()
+        );
+    }
+
     public Document getAccessibleDocumentOrThrow(Long id) {
         return getDocumentById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Document not found."));

@@ -29,6 +29,13 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     List<DocumentCleanupProjection> findCleanupDataByOwnerId(Long ownerId);
 
     Optional<Document> findByIdAndOwnerUsername(Long id, String username);
+
+    // The same file can be uploaded more than once: return the newest copy
+    Optional<Document> findFirstByContentSha256OrderByUploadTimestampDesc(String contentSha256);
+
+    Optional<Document> findFirstByContentSha256AndOwnerUsernameOrderByUploadTimestampDesc(
+            String contentSha256, String username);
+
     @Modifying
     @Transactional
     @Query("update Document d set d.owner = :owner where d.owner is null")

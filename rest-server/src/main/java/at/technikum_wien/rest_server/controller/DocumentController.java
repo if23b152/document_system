@@ -118,6 +118,20 @@ public class DocumentController {
                 .orElse(ResponseEntity.notFound().build()); // Or 404 Not Found
     }
 
+    // === GET: Find a document by the SHA-256 of its content (used by the Explorer integration) ===
+    @GetMapping("/by-hash/{sha256}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<DocumentResponse> getDocumentByContentHash(@PathVariable String sha256) {
+        String hash = ContentHash.normalize(sha256);
+        if (hash == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return documentService.getDocumentByContentHash(hash)
+                .map(documentMapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // === PUT: Update document metadata ===
     @PutMapping("/{id}")
     public ResponseEntity<DocumentResponse> updateDocument(
