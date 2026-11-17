@@ -6,6 +6,7 @@ import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.model.DocumentResponse;
 import at.technikum_wien.rest_server.model.DocumentTextResponse;
 import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
+import at.technikum_wien.rest_server.service.ContentHash;
 import at.technikum_wien.rest_server.service.DocumentService;
 import at.technikum_wien.rest_server.service.MinioService;
 import jakarta.validation.Valid;
@@ -64,6 +65,12 @@ public class DocumentController {
         }
 
         try {
+            // Fingerprint of the content, used to find the document again from a local copy
+            String contentSha256;
+            try (InputStream in = file.getInputStream()) {
+                contentSha256 = ContentHash.sha256(in);
+            }
+
             // Upload the file to MinIO and receive its object key
             String objectKey = documentService.uploadToMinio(file);
 
@@ -71,7 +78,8 @@ public class DocumentController {
             Document saved = documentService.saveDocument(
                     sanitizeFileName(file.getOriginalFilename()),
                     file.getSize(),
-                    objectKey
+                    objectKey,
+                    contentSha256
             );
 
             // Convert entity to response DTO

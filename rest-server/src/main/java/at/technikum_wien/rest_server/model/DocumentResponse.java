@@ -31,4 +31,7 @@ public class DocumentResponse {
 
     // Username of the owner (used by the admin dashboard grouping)
     private String ownerUsername;
+
+    // SHA-256 of the file content (null for documents uploaded before it was recorded)
+    private String contentSha256;
 }

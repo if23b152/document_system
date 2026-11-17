@@ -74,7 +74,8 @@ class DocumentControllerTest {
         Mockito.when(documentService.saveDocument(
                 Mockito.eq("test.pdf"),
                 Mockito.anyLong(),
-                Mockito.eq("minio-key")
+                Mockito.eq("minio-key"),
+                Mockito.matches("[0-9a-f]{64}")
         )).thenReturn(savedDocument);
 
         Mockito.when(documentMapper.toResponse(savedDocument))
@@ -165,8 +166,8 @@ class DocumentControllerTest {
         Document d2 = new Document();
         d2.setId(2L);
 
-        DocumentResponse r1 = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null);
-        DocumentResponse r2 = new DocumentResponse(2L, "b.pdf", 20, null, LocalDateTime.now(), List.of(), null);
+        DocumentResponse r1 = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null, null);
+        DocumentResponse r2 = new DocumentResponse(2L, "b.pdf", 20, null, LocalDateTime.now(), List.of(), null, null);
 
         Mockito.when(documentService.getAllDocuments()).thenReturn(List.of(d1, d2));
         Mockito.when(documentMapper.toResponse(d1)).thenReturn(r1);
@@ -187,7 +188,7 @@ class DocumentControllerTest {
         Document doc = new Document();
         doc.setId(1L);
 
-        DocumentResponse response = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null);
+        DocumentResponse response = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null, null);
 
         Mockito.when(documentService.getDocumentById(1L)).thenReturn(Optional.of(doc));
         Mockito.when(documentMapper.toResponse(doc)).thenReturn(response);
@@ -219,7 +220,7 @@ class DocumentControllerTest {
         Document updated = new Document();
         updated.setId(1L);
 
-        DocumentResponse response = new DocumentResponse(1L, "new.pdf", 10, "summary", LocalDateTime.now(), List.of("tag1", "tag2"), null);
+        DocumentResponse response = new DocumentResponse(1L, "new.pdf", 10, "summary", LocalDateTime.now(), List.of("tag1", "tag2"), null, null);
 
         Mockito.when(documentService.updateDocument(Mockito.eq(1L), Mockito.any()))
                 .thenReturn(Optional.of(updated));

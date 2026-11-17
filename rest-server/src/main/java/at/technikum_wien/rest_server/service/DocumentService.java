@@ -73,10 +73,11 @@ public class DocumentService {
      * @param fileName The name of the file.
      * @param fileSize The size of the file in bytes.
      * @param objectKey The MinIO object key.
+     * @param contentSha256 SHA-256 of the file content (lowercase hex).
      * @return The saved Document entity.
      */
     @Transactional // Ensures DB operations happen in a single transaction
-    public Document saveDocument(String fileName, long fileSize, String objectKey) {
+    public Document saveDocument(String fileName, long fileSize, String objectKey, String contentSha256) {
         AppUser currentUser = appUserService.getCurrentUser();
 
         // Create new document entity
@@ -84,6 +85,7 @@ public class DocumentService {
         document.setFileName(fileName);
         document.setFileSize(fileSize);
         document.setMinioObjectKey(objectKey);
+        document.setContentSha256(contentSha256);
         document.setOwner(currentUser);
         document.setUploadTimestamp(LocalDateTime.now());
         document.setOcrProcessed(false); // OCR not done yet
