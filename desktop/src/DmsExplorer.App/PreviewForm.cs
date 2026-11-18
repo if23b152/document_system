@@ -12,7 +12,6 @@ internal sealed class PreviewForm : Form
     private const int RenderWidth = 1100;
 
     private readonly string _file;
-    private readonly AppData _appData;
     private readonly IntPtr _parent;
     private readonly NotesStore _notes;
     private readonly FlowLayoutPanel _pages;
@@ -27,7 +26,6 @@ internal sealed class PreviewForm : Form
     public PreviewForm(string file, AppData appData, IntPtr parent)
     {
         _file = file;
-        _appData = appData;
         _parent = parent;
         _notes = new NotesStore(appData);
 
@@ -51,7 +49,7 @@ internal sealed class PreviewForm : Form
         };
         actions.Controls.Add(Theme.ToolbarButton("⚡ Fast reader", (_, _) => Program.Launch("reader", _file)));
         actions.Controls.Add(Theme.ToolbarButton("📝 Notes", (_, _) => Program.Launch("notes", _file)));
-        actions.Controls.Add(Theme.ToolbarButton("↗ Open in DMS", (_, _) => OpenInDms()));
+        actions.Controls.Add(Theme.ToolbarButton("↗ Open in DMS", (_, _) => Program.Launch("open", _file)));
 
         _status = new Label
         {
@@ -196,13 +194,6 @@ internal sealed class PreviewForm : Form
         string? firstLine = note?.Text.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
         _noteStrip.Visible = !string.IsNullOrEmpty(firstLine);
         _noteStrip.Text = "📝  " + firstLine;
-    }
-
-    private void OpenInDms()
-    {
-        // Step 2 of the integration will look the document up by its content hash;
-        // until then the dashboard is opened.
-        Program.OpenInBrowser(Settings.Load(_appData).DmsUrl.TrimEnd('/') + "/dashboard.html");
     }
 
     /// <summary>Keeps the embedded window the size of the preview pane; exits when the pane is gone.</summary>

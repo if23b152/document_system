@@ -2,7 +2,7 @@
 
 Brings the document system into Windows Explorer: select a PDF and the **preview pane** shows the document together with actions – **fast reader**, **notes** and **open in DMS**. The same actions are available in the **context menu**.
 
-> Prototype (step 1 of the integration). Notes are stored locally for now; syncing them with the DMS backend and opening the matching DMS document (lookup by content hash) are the next steps.
+> Prototype. Notes are stored locally for now; syncing them with DMS comments is the next step.
 
 ## Features
 
@@ -11,7 +11,8 @@ Brings the document system into Windows Explorer: select a PDF and the **preview
 | 🖼️ **Preview pane** | PDF pages rendered with the PDF engine built into Windows, action bar on top, first line of your note shown as a yellow strip |
 | ⚡ **Fast reader** | RSVP speed reading directly on the local PDF: highlighted focus letter, 100–1000 wpm, pauses at punctuation, position remembered per document |
 | 📝 **Notes** | one note per document with autosave; it follows the file when it is renamed or moved (keyed by the SHA-256 of the content) |
-| 🖱️ **Context menu** | *Document System → Fast reader / Notes / Open preview window* |
+| ↗ **Open in DMS** | finds the file in the DMS by its content hash and opens its page; if it is not there yet, offers to upload it |
+| 🖱️ **Context menu** | *Document System → Fast reader / Notes / Open preview window / Open in DMS* |
 
 Keys in the fast reader: `Space` start/pause · `←` `→` step · `↑` `↓` speed · `Home` restart · `Esc` close.
 
@@ -24,7 +25,9 @@ flowchart LR
     APP -->|embeds its window| E
     APP -->|buttons| R[Fast reader window]
     APP -->|buttons| N[Notes window]
-    APP -->|button| W[DMS web UI]
+    APP -->|button| O[Open in DMS]
+    O -->|"GET /api/documents/by-hash/{sha256}<br/>POST /api/documents/upload<br/>Bearer access token"| API[DMS REST API]
+    O -->|opens| W[DMS web UI]
     R & N --> D[(%APPDATA%\DmsExplorer)]
 ```
 
@@ -55,6 +58,15 @@ The install replaces the PDF preview (usually Edge's) for this PC. Uninstall res
 
 Notes and settings stay in `%APPDATA%\DmsExplorer` (`settings.json` holds the DMS URL, default `http://localhost:8080`).
 
+## Connect to the DMS
+
+*Open in DMS* needs a personal access token of your DMS account:
+
+1. Log in to the DMS web UI and create a token (`POST /api/tokens` with `{ "name": "Laptop" }`; a page in the web UI will follow).
+2. Run `DmsExplorer connect` (or just click *Open in DMS* – the dialog appears when no token is saved), enter the DMS address and paste the token.
+
+The connection is tested before anything is saved. The token is stored encrypted for your Windows account (DPAPI, `%APPDATA%\DmsExplorer\token.bin`); *Remove token* in the same dialog deletes it. Revoke it in the DMS when a device is lost.
+
 ## Development
 
 ```powershell
@@ -62,6 +74,8 @@ dotnet test desktop/DmsExplorer.sln            # core unit tests
 dotnet run --project desktop/src/DmsExplorer.App -- preview C:\path\file.pdf
 dotnet run --project desktop/src/DmsExplorer.App -- reader  C:\path\file.pdf
 dotnet run --project desktop/src/DmsExplorer.App -- notes   C:\path\file.pdf
+dotnet run --project desktop/src/DmsExplorer.App -- open    C:\path\file.pdf
+dotnet run --project desktop/src/DmsExplorer.App -- connect
 ```
 
 Without `--parent` the preview opens as a normal window, which is the easiest way to work on the UI.
@@ -69,8 +83,8 @@ Without `--parent` the preview opens as a normal window, which is the easiest wa
 ```text
 desktop/
 ├── src/
-│   ├── DmsExplorer.Core/            notes, settings, reader progress, PDF text, RSVP timing
-│   ├── DmsExplorer.App/             companion app: preview, fast reader, notes (WinForms)
+│   ├── DmsExplorer.Core/            notes, settings, reader progress, PDF text, RSVP timing, DMS API client
+│   ├── DmsExplorer.App/             companion app: preview, fast reader, notes, connect, open in DMS (WinForms)
 │   └── DmsExplorer.PreviewHandler/  COM preview handler loaded by Explorer
 ├── tests/DmsExplorer.Core.Tests/    xUnit tests with generated PDFs
 └── install.ps1                      build, install, register / uninstall
@@ -79,6 +93,6 @@ desktop/
 ## Roadmap
 
 1. ✅ Preview pane, fast reader, local notes, context menu
-2. Backend: find a document by content hash, token login for the desktop app, upload from Explorer, sync notes with DMS comments
+2. ✅ Find a document by content hash · ✅ access tokens · ✅ open in DMS / upload from Explorer · web UI page for tokens · sync notes with DMS comments
 3. Fast reader and notes on the OCR text of scanned PDFs (from the DMS worker)
 4. Signed MSIX package and settings window
