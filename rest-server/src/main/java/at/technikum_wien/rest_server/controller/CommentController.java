@@ -40,6 +40,14 @@ public class CommentController {
         );
     }
 
+    // === PUT: Replace the text of a comment ===
+    @PutMapping("/{commentId}")
+    public ResponseEntity<Comment> updateComment(
+            @PathVariable Long commentId,
+            @RequestBody String content) {
+        return ResponseEntity.ok(commentService.updateComment(commentId, content));
+    }
+
     // === DELETE: Remove a comment by its ID ===
     @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {

@@ -70,8 +70,8 @@ class CommentControllerTest {
         Document doc = new Document();
         doc.setId(documentId);
 
-        Comment c1 = new Comment(1L, "First", LocalDateTime.now(), doc);
-        Comment c2 = new Comment(2L, "Second", LocalDateTime.now(), doc);
+        Comment c1 = new Comment(1L, "First", LocalDateTime.now(), doc, null);
+        Comment c2 = new Comment(2L, "Second", LocalDateTime.now(), doc, null);
 
         List<Comment> comments = List.of(c1, c2);
 
@@ -99,5 +99,22 @@ class CommentControllerTest {
 
         mockMvc.perform(delete("/api/comments/{commentId}", commentId))
                 .andExpect(status().isNoContent());
+    }
+
+    // =====================================================
+    // === UPDATE COMMENT ===
+    // =====================================================
+    @Test
+    void updateComment_returnsEditedComment() throws Exception {
+        Comment edited = new Comment(5L, "edited", LocalDateTime.now().minusDays(1), new Document(), LocalDateTime.now());
+        Mockito.when(commentService.updateComment(5L, "edited")).thenReturn(edited);
+
+        mockMvc.perform(put("/api/comments/{commentId}", 5L)
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("edited"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(5))
+                .andExpect(jsonPath("$.content").value("edited"))
+                .andExpect(jsonPath("$.updatedAt").exists());
     }
 }

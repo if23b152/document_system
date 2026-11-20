@@ -97,4 +97,53 @@ public class CommentServiceTest {
         // Verify that documentService was called
         verify(documentService, times(1)).getAccessibleDocumentOrThrow(documentId);
     }
+
+    // updateComment → accessible comment → text replaced and edit time recorded
+    @Test
+    void updateComment_accessible_replacesTextAndSetsUpdatedAt() {
+        Comment comment = existingComment(5L, 1L);
+        when(commentRepository.findById(5L)).thenReturn(java.util.Optional.of(comment));
+        when(commentRepository.save(any(Comment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Comment saved = commentService.updateComment(5L, "edited");
+
+        assertEquals("edited", saved.getContent());
+        assertNotNull(saved.getUpdatedAt());
+        verify(documentService).getAccessibleDocumentOrThrow(1L);
+    }
+
+    // updateComment → comment on someone else's document → not changed
+    @Test
+    void updateComment_inaccessibleDocument_doesNotSave() {
+        Comment comment = existingComment(5L, 2L);
+        when(commentRepository.findById(5L)).thenReturn(java.util.Optional.of(comment));
+        when(documentService.getAccessibleDocumentOrThrow(2L)).thenThrow(new RuntimeException("Document not found"));
+
+        assertThrows(RuntimeException.class, () -> commentService.updateComment(5L, "edited"));
+
+        assertEquals("original", comment.getContent());
+        verify(commentRepository, never()).save(any());
+    }
+
+    // updateComment → empty or missing → rejected before touching the database
+    @Test
+    void updateComment_invalidInput_isRejected() {
+        assertThrows(RuntimeException.class, () -> commentService.updateComment(5L, "  "));
+        assertThrows(RuntimeException.class, () -> commentService.updateComment(5L, "x".repeat(2001)));
+
+        when(commentRepository.findById(6L)).thenReturn(java.util.Optional.empty());
+        assertThrows(RuntimeException.class, () -> commentService.updateComment(6L, "text"));
+
+        verify(commentRepository, never()).save(any());
+    }
+
+    private static Comment existingComment(Long id, Long documentId) {
+        Document document = new Document();
+        document.setId(documentId);
+        Comment comment = new Comment();
+        comment.setId(id);
+        comment.setContent("original");
+        comment.setDocument(document);
+        return comment;
+    }
 }

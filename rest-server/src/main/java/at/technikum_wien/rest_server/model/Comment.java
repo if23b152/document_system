@@ -28,4 +28,7 @@ public class Comment {
     @JoinColumn(name = "document_id") // Foreign key column in the comments table
     @JsonBackReference // Prevents infinite JSON recursion when serializing
     private Document document;
+
+    // Timestamp of the last edit (null if the comment was never edited)
+    private LocalDateTime updatedAt;
 }
