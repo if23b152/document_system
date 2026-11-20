@@ -170,6 +170,7 @@ All endpoints are under `/api`. Except for `/api/auth/**`, every request require
 |---|---|---|
 | `POST` | `/api/comments/document/{documentId}` | add a comment |
 | `GET` | `/api/comments/document/{documentId}` | list comments |
+| `PUT` | `/api/comments/{commentId}` | edit a comment (plain text body; sets `updatedAt`) |
 | `DELETE` | `/api/comments/{commentId}` | delete a comment |
 
 ## Security
