@@ -83,6 +83,45 @@ public class DmsClientTests : IDisposable
     }
 
     [Fact]
+    public async Task GetComments_reads_the_comments_of_a_document()
+    {
+        _server.Respond(HttpStatusCode.OK, """
+            [{"id":1,"content":"First","createdAt":"2026-11-20T10:00:00","updatedAt":null},
+             {"id":2,"content":"Second","createdAt":"2026-11-20T11:00:00","updatedAt":"2026-11-21T09:30:00"}]
+            """);
+
+        var comments = await Client().GetCommentsAsync(7);
+
+        Assert.Equal(2, comments.Count);
+        Assert.Null(comments[0].UpdatedAt);
+        Assert.Equal(new DateTime(2026, 11, 21, 9, 30, 0), comments[1].UpdatedAt);
+        Assert.EndsWith("/api/comments/document/7", _server.Requests[0].Uri);
+    }
+
+    [Fact]
+    public async Task AddComment_posts_plain_text()
+    {
+        _server.Respond(HttpStatusCode.OK, """{"id":3,"content":"Read chapter 2","createdAt":"2026-11-21T10:00:00"}""");
+
+        var comment = await Client().AddCommentAsync(7, "Read chapter 2");
+
+        Assert.Equal(3, comment.Id);
+        var request = Assert.Single(_server.Requests);
+        Assert.Equal("POST", request.Method);
+        Assert.Equal("Read chapter 2", request.Body);
+    }
+
+    [Fact]
+    public async Task UpdateComment_returns_null_when_the_comment_was_deleted()
+    {
+        _server.Respond(HttpStatusCode.NotFound);
+
+        Assert.Null(await Client().UpdateCommentAsync(3, "new text"));
+        Assert.Equal("PUT", _server.Requests[0].Method);
+        Assert.EndsWith("/api/comments/3", _server.Requests[0].Uri);
+    }
+
+    [Fact]
     public void DocumentPage_points_to_the_web_ui()
     {
         Assert.Equal("http://localhost:8080/document-details.html?id=7", Client().DocumentPage(7).ToString());

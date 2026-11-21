@@ -9,6 +9,8 @@ public sealed record DmsDocument(long Id, string FileName, long FileSize, string
 
 public sealed record DmsUser(string Username);
 
+public sealed record DmsComment(long Id, string Content, DateTime CreatedAt, DateTime? UpdatedAt);
+
 /// <summary>The DMS could not be reached or answered with an unexpected error.</summary>
 public class DmsException(string message, Exception? inner = null) : Exception(message, inner);
 
@@ -49,6 +51,23 @@ public sealed class DmsClient : IDisposable
         await SendAsync<DmsDocument>(
             () => new HttpRequestMessage(HttpMethod.Get, $"api/documents/by-hash/{Uri.EscapeDataString(contentSha256)}"),
             ct, notFoundIsNull: true);
+
+    public async Task<IReadOnlyList<DmsComment>> GetCommentsAsync(long documentId, CancellationToken ct = default) =>
+        await SendAsync<List<DmsComment>>(
+            () => new HttpRequestMessage(HttpMethod.Get, $"api/comments/document/{documentId}"), ct) ?? [];
+
+    public async Task<DmsComment> AddCommentAsync(long documentId, string text, CancellationToken ct = default) =>
+        await SendAsync<DmsComment>(
+            () => new HttpRequestMessage(HttpMethod.Post, $"api/comments/document/{documentId}") { Content = PlainText(text) },
+            ct) ?? throw new DmsException("The DMS did not return the new comment.");
+
+    /// <summary>Replaces the text of a comment; null if the comment no longer exists.</summary>
+    public Task<DmsComment?> UpdateCommentAsync(long commentId, string text, CancellationToken ct = default) =>
+        SendAsync<DmsComment>(
+            () => new HttpRequestMessage(HttpMethod.Put, $"api/comments/{commentId}") { Content = PlainText(text) },
+            ct, notFoundIsNull: true);
+
+    private static StringContent PlainText(string text) => new(text, System.Text.Encoding.UTF8, "text/plain");
 
     public async Task<DmsDocument> UploadAsync(string pdfPath, CancellationToken ct = default)
     {
