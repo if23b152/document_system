@@ -59,5 +59,32 @@ public class NotesStoreTests : IDisposable
         Assert.Null(_notes.Load(b));
     }
 
+    [Fact]
+    public void Saving_text_keeps_the_dms_link()
+    {
+        string pdf = _files.Pdf("doc.pdf", "content");
+        _notes.Save(pdf, "first");
+        _notes.SetLink(pdf, new DmsLink(7, 3, "first"));
+
+        _notes.Save(pdf, "second");
+
+        Assert.Equal(new DmsLink(7, 3, "first"), _notes.Load(pdf)!.Dms);
+    }
+
+    [Fact]
+    public void Notes_saved_before_dms_sync_still_load()
+    {
+        string pdf = _files.Pdf("doc.pdf", "content");
+        var appData = new AppData(Path.Combine(_files.Root, "appdata"));
+        string file = appData.PathOf("notes", FileKey.Of(pdf) + ".json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, """{"Text":"old note","SourcePath":"C:\\x.pdf","UpdatedUtc":"2026-11-16T10:00:00Z"}""");
+
+        var note = _notes.Load(pdf);
+
+        Assert.Equal("old note", note!.Text);
+        Assert.Null(note.Dms);
+    }
+
     public void Dispose() => _files.Dispose();
 }

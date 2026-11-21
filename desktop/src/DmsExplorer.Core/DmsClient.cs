@@ -14,6 +14,9 @@ public sealed record DmsComment(long Id, string Content, DateTime CreatedAt, Dat
 /// <summary>The DMS could not be reached or answered with an unexpected error.</summary>
 public class DmsException(string message, Exception? inner = null) : Exception(message, inner);
 
+/// <summary>The requested document or comment does not exist (any more) or is not accessible.</summary>
+public sealed class DmsNotFoundException() : DmsException("The document was not found in the DMS.");
+
 /// <summary>The access token is missing, invalid, expired or revoked.</summary>
 public sealed class DmsAuthException() : DmsException("The access token was rejected – create a new one in the DMS.");
 
@@ -114,6 +117,8 @@ public sealed class DmsClient : IDisposable
                     throw new DmsAuthException();
                 case HttpStatusCode.NotFound when notFoundIsNull:
                     return null;
+                case HttpStatusCode.NotFound:
+                    throw new DmsNotFoundException();
                 case HttpStatusCode.UnsupportedMediaType:
                     throw new DmsException("The DMS only accepts PDF files.");
                 case HttpStatusCode.RequestEntityTooLarge:
