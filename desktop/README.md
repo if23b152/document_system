@@ -2,7 +2,7 @@
 
 Brings the document system into Windows Explorer: select a PDF and the **preview pane** shows the document together with actions – **fast reader**, **notes** and **open in DMS**. The same actions are available in the **context menu**.
 
-> Prototype. Notes are stored locally for now; syncing them with DMS comments is the next step.
+> Prototype – see the roadmap at the end for what is still missing.
 
 ## Features
 
@@ -10,7 +10,7 @@ Brings the document system into Windows Explorer: select a PDF and the **preview
 |---|---|
 | 🖼️ **Preview pane** | PDF pages rendered with the PDF engine built into Windows, action bar on top, first line of your note shown as a yellow strip |
 | ⚡ **Fast reader** | RSVP speed reading directly on the local PDF: highlighted focus letter, 100–1000 wpm, pauses at punctuation, position remembered per document |
-| 📝 **Notes** | one note per document with autosave; it follows the file when it is renamed or moved (keyed by the SHA-256 of the content) |
+| 📝 **Notes** | one note per document with autosave; it follows the file when it is renamed or moved (keyed by the SHA-256 of the content). *Share to DMS* turns it into a comment on the DMS document that stays in sync |
 | ↗ **Open in DMS** | finds the file in the DMS by its content hash and opens its page; if it is not there yet, offers to upload it |
 | 🖱️ **Context menu** | *Document System → Fast reader / Notes / Open preview window / Open in DMS* |
 
@@ -58,6 +58,19 @@ The install replaces the PDF preview (usually Edge's) for this PC. Uninstall res
 
 Notes and settings stay in `%APPDATA%\DmsExplorer` (`settings.json` holds the DMS URL, default `http://localhost:8080`).
 
+## Notes in the DMS
+
+A note is local until you click **Share to DMS**. It is then posted as a comment on the matching DMS document (the document is uploaded first if you agree) and the two stay linked:
+
+| Situation | What happens |
+|---|---|
+| you edit the note | the comment is updated after the autosave |
+| the comment was edited in the web UI | the note takes the new text when it is opened |
+| both were changed differently | you choose which version to keep |
+| the comment was deleted in the DMS | the link is removed, the note stays local |
+
+The rule compares both sides with the text they last agreed on, so it does not depend on clocks. Other comments on the document are listed below the note. Deleting the note locally keeps the DMS comment.
+
 ## Connect to the DMS
 
 *Open in DMS* needs a personal access token of your DMS account:
@@ -93,6 +106,6 @@ desktop/
 ## Roadmap
 
 1. ✅ Preview pane, fast reader, local notes, context menu
-2. ✅ Find a document by content hash · ✅ access tokens · ✅ open in DMS / upload from Explorer · web UI page for tokens · sync notes with DMS comments
+2. ✅ Find a document by content hash · ✅ access tokens · ✅ open in DMS / upload from Explorer · ✅ notes synced with DMS comments · web UI page for tokens
 3. Fast reader and notes on the OCR text of scanned PDFs (from the DMS worker)
 4. Signed MSIX package and settings window
