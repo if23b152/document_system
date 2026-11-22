@@ -52,6 +52,25 @@ public class DmsClientTests : IDisposable
     }
 
     [Fact]
+    public async Task A_web_page_instead_of_the_api_raises_a_readable_error()
+    {
+        _server.Respond(HttpStatusCode.OK, "<html>Some other site</html>");
+
+        var error = await Assert.ThrowsAsync<DmsException>(() => Client().GetCurrentUserAsync());
+        Assert.Contains("does not look like a DMS", error.Message);
+    }
+
+    [Fact]
+    public async Task Too_long_comments_are_refused_before_sending()
+    {
+        string text = new('x', DmsClient.MaxCommentLength + 1);
+
+        await Assert.ThrowsAsync<DmsException>(() => Client().AddCommentAsync(7, text));
+        await Assert.ThrowsAsync<DmsException>(() => Client().UpdateCommentAsync(3, text));
+        Assert.Empty(_server.Requests);
+    }
+
+    [Fact]
     public async Task Upload_posts_the_pdf_as_multipart()
     {
         string pdf = _files.Pdf("report.pdf", "content");

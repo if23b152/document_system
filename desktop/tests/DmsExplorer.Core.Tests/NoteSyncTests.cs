@@ -27,6 +27,7 @@ public class NoteSyncTests : IDisposable
     [InlineData("base", "web edit", SyncDecision.PullRemote)]
     [InlineData("local edit", "web edit", SyncDecision.Conflict)]
     [InlineData("same edit", "same edit", SyncDecision.InSync)]
+    [InlineData("base\r\n", "base\n", SyncDecision.InSync)]
     public void Decide_compares_both_sides_with_the_last_synced_text(string local, string remote, SyncDecision expected)
     {
         var link = new DmsLink(7, 3, "base");

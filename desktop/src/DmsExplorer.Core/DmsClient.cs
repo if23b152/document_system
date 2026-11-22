@@ -29,6 +29,9 @@ public sealed class DmsClient : IDisposable
     /// <summary>Upload limit of the REST server (spring.servlet.multipart.max-file-size).</summary>
     public const long MaxUploadBytes = 20L * 1024 * 1024;
 
+    /// <summary>Longest comment the REST server accepts (CommentService.MAX_COMMENT_LENGTH).</summary>
+    public const int MaxCommentLength = 2000;
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _http;
 
@@ -70,7 +73,9 @@ public sealed class DmsClient : IDisposable
             () => new HttpRequestMessage(HttpMethod.Put, $"api/comments/{commentId}") { Content = PlainText(text) },
             ct, notFoundIsNull: true);
 
-    private static StringContent PlainText(string text) => new(text, System.Text.Encoding.UTF8, "text/plain");
+    private static StringContent PlainText(string text) => text.Length <= MaxCommentLength
+        ? new(text, System.Text.Encoding.UTF8, "text/plain")
+        : throw new DmsException($"DMS comments can have {MaxCommentLength} characters, this note has {text.Length}.");
 
     public async Task<DmsDocument> UploadAsync(string pdfPath, CancellationToken ct = default)
     {
@@ -128,7 +133,15 @@ public sealed class DmsClient : IDisposable
             {
                 throw new DmsException($"The DMS answered with {(int)response.StatusCode} {response.ReasonPhrase}.");
             }
-            return await response.Content.ReadFromJsonAsync<T>(Json, ct);
+            try
+            {
+                return await response.Content.ReadFromJsonAsync<T>(Json, ct);
+            }
+            catch (Exception e) when (e is JsonException or NotSupportedException)
+            {
+                // e.g. a web page: the address belongs to something else
+                throw new DmsException($"{BaseUrl} does not look like a DMS – check the address.", e);
+            }
         }
     }
 

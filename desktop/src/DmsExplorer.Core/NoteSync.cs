@@ -36,16 +36,19 @@ public sealed class NoteSync(NotesStore notes, DmsClient client)
         {
             return SyncDecision.RemoteDeleted;
         }
-        bool localChanged = localText != link.SyncedText;
-        bool remoteChanged = remote.Content != link.SyncedText;
+        bool localChanged = !SameText(localText, link.SyncedText);
+        bool remoteChanged = !SameText(remote.Content, link.SyncedText);
         return (localChanged, remoteChanged) switch
         {
             (false, false) => SyncDecision.InSync,
             (true, false) => SyncDecision.PushLocal,
             (false, true) => SyncDecision.PullRemote,
-            _ => localText == remote.Content ? SyncDecision.InSync : SyncDecision.Conflict,
+            _ => SameText(localText, remote.Content) ? SyncDecision.InSync : SyncDecision.Conflict,
         };
     }
+
+    /// <summary>Compares texts ignoring line ending style (Windows editor vs. web UI).</summary>
+    public static bool SameText(string a, string b) => a.ReplaceLineEndings("\n") == b.ReplaceLineEndings("\n");
 
     /// <summary>Publishes the note as a new comment on the matching DMS document and links them.</summary>
     public async Task<ShareResult> ShareAsync(string filePath, CancellationToken ct = default)
@@ -84,7 +87,7 @@ public sealed class NoteSync(NotesStore notes, DmsClient client)
         var decision = Decide(note.Text, link, remote);
         switch (decision)
         {
-            case SyncDecision.InSync when remote != null && link.SyncedText != remote.Content:
+            case SyncDecision.InSync when remote != null && !SameText(link.SyncedText, remote.Content):
                 notes.SaveSynced(filePath, note.Text, link);
                 break;
             case SyncDecision.PushLocal:
