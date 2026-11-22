@@ -24,6 +24,24 @@ jobs:
       fail-fast: false
       matrix:
         service: [rest-server, worker-service]
+    # The end-to-end tests of the REST server use this database instead of H2
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: e2e
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_DATASOURCE_URL: jdbc:postgresql://localhost:5432/e2e
+      E2E_DATASOURCE_USERNAME: postgres
+      E2E_DATASOURCE_PASSWORD: ci-password
     defaults:
       run:
         working-directory: ${{ matrix.service }}
