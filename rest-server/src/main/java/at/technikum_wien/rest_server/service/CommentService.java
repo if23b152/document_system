@@ -34,14 +34,7 @@ public class CommentService {
 
     @Transactional
     public Comment addComment(Long documentId, String content) {
-
-        // Basic input validation (raw text body, no DTO validation available)
-        if (content == null || content.isBlank()) {
-            throw new ResponseStatusException(BAD_REQUEST, "Comment must not be empty.");
-        }
-        if (content.length() > MAX_COMMENT_LENGTH) {
-            throw new ResponseStatusException(BAD_REQUEST, "Comment is too long.");
-        }
+        validateContent(content);
 
         // Load document or fail if it does not exist
         Document document = documentService.getAccessibleDocumentOrThrow(documentId);
@@ -63,6 +56,33 @@ public class CommentService {
     public List<Comment> getCommentsForDocument(Long documentId) {
         documentService.getAccessibleDocumentOrThrow(documentId);
         return commentRepository.findByDocumentId(documentId);
+    }
+
+    /**
+     * Replaces the text of a comment and records when it was edited.
+     */
+    @Transactional
+    public Comment updateComment(Long commentId, String content) {
+        validateContent(content);
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Comment not found."));
+        // Same access rule as for reading: only comments on accessible documents
+        documentService.getAccessibleDocumentOrThrow(comment.getDocument().getId());
+
+        comment.setContent(content);
+        comment.setUpdatedAt(LocalDateTime.now());
+        return commentRepository.save(comment);
+    }
+
+    // Basic input validation (raw text body, no DTO validation available)
+    private static void validateContent(String content) {
+        if (content == null || content.isBlank()) {
+            throw new ResponseStatusException(BAD_REQUEST, "Comment must not be empty.");
+        }
+        if (content.length() > MAX_COMMENT_LENGTH) {
+            throw new ResponseStatusException(BAD_REQUEST, "Comment is too long.");
+        }
     }
 
     /**
