@@ -11,6 +11,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -27,6 +29,9 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final ApiTokenService apiTokenService;
     private final AppUserService appUserService;
+    // Keeps the login on the request, so it is still there when a streamed response (PDF download)
+    // is finished in a second, asynchronous pass
+    private final SecurityContextRepository requestOnly = new RequestAttributeSecurityContextRepository();
 
     public ApiTokenAuthenticationFilter(ApiTokenService apiTokenService, AppUserService appUserService) {
         this.apiTokenService = apiTokenService;
@@ -53,6 +58,7 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(new ApiTokenAuthentication(user, token.get().getId()));
         SecurityContextHolder.setContext(context);
+        requestOnly.saveContext(context, request, response);
         try {
             chain.doFilter(request, response);
         } finally {

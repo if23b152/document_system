@@ -11,7 +11,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -44,8 +43,10 @@ public class SecurityConfig {
                 // CSRF: the API is only used by the same-origin UI; the session cookie is
                 // SameSite=Strict + HttpOnly (see application.properties), so cross-site
                 // requests do not carry the session.
+                // Sessions are created only by AuthController on login (which also changes the session id).
+                // Do not set a sessionCreationPolicy here: it enables Spring's SessionManagementFilter,
+                // which would store access token logins in a session that outlives the token.
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .sessionFixation(fixation -> fixation.changeSessionId()))
                 // Return 401 (instead of 403) for unauthenticated requests so the UI redirects to login
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
