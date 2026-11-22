@@ -221,6 +221,10 @@ internal sealed class NotesForm : Form
             {
                 _syncAgain = false;
                 var outcome = await sync.SyncAsync(_file);
+                if (IsDisposed)
+                {
+                    return;
+                }
                 if (outcome != null)
                 {
                     await HandleOutcomeAsync(sync, outcome);
@@ -232,7 +236,7 @@ internal sealed class NotesForm : Form
                 await ShowOtherCommentsAsync(sync);
             }
         }
-        catch (DmsException ex)
+        catch (Exception ex) when (ex is DmsException or IOException)
         {
             ShowDmsError(ex);
         }
@@ -252,6 +256,14 @@ internal sealed class NotesForm : Form
                 _status.Text = $"Saved and synced {DateTime.Now:t}";
                 break;
             case SyncDecision.PullRemote:
+                // Never overwrite what was typed while the sync was running
+                if (!NoteSync.SameText(_text.Text, outcome.LocalText ?? "") && AskKeepLocal(outcome.RemoteText))
+                {
+                    _status.Text = "Keeping your version";
+                    _saveTimer.Start();
+                    break;
+                }
+                _saveTimer.Stop();
                 ShowText(outcome.RemoteText ?? "");
                 _status.Text = "Updated from the DMS";
                 break;
@@ -260,12 +272,7 @@ internal sealed class NotesForm : Form
                 _othersPanel.Visible = false;
                 break;
             case SyncDecision.Conflict:
-                var answer = MessageBox.Show(this,
-                    "The note was changed here and in the DMS.\n\n" +
-                    $"DMS version:\n{Shorten(outcome.RemoteText)}\n\n" +
-                    "Keep your version? (No = take the DMS version)",
-                    "Notes – conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                bool keepLocal = answer == DialogResult.Yes;
+                bool keepLocal = AskKeepLocal(outcome.RemoteText);
                 await sync.ResolveAsync(_file, keepLocal, outcome.RemoteText ?? "");
                 if (!keepLocal)
                 {
@@ -276,6 +283,13 @@ internal sealed class NotesForm : Form
         }
     }
 
+    private bool AskKeepLocal(string? remoteText) =>
+        MessageBox.Show(this,
+            "The note was changed here and in the DMS.\n\n" +
+            $"DMS version:\n{Shorten(remoteText)}\n\n" +
+            "Keep your version? (No = take the DMS version)",
+            "Notes – conflict", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+
     private async Task ShowOtherCommentsAsync(NoteSync sync)
     {
         if (_notes.Load(_file)?.Dms is not { } link)
@@ -283,6 +297,10 @@ internal sealed class NotesForm : Form
             return;
         }
         var others = await sync.OtherCommentsAsync(link);
+        if (IsDisposed)
+        {
+            return;
+        }
         _others.BeginUpdate();
         _others.Items.Clear();
         foreach (var comment in others.OrderBy(c => c.CreatedAt))
@@ -298,13 +316,17 @@ internal sealed class NotesForm : Form
     {
         bool wasLoading = _loading;
         _loading = true;
-        _text.Text = text;
+        _text.Text = text.ReplaceLineEndings(Environment.NewLine);
         _text.SelectionStart = _text.TextLength;
         _loading = wasLoading;
     }
 
     private void UpdateShareButton(Note? note)
     {
+        if (IsDisposed)
+        {
+            return;
+        }
         bool shared = note?.Dms != null;
         _share.Text = shared ? "✓ Shared" : "Share to DMS";
         _share.Enabled = !shared && !string.IsNullOrWhiteSpace(_text.Text);
@@ -312,6 +334,10 @@ internal sealed class NotesForm : Form
 
     private void ShowDmsError(Exception ex)
     {
+        if (IsDisposed)
+        {
+            return;
+        }
         if (ex is DmsAuthException)
         {
             new TokenStore(_appData).Clear();
