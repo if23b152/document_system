@@ -12,7 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "documents") // Maps this class to the "documents" table in PostgreSQL
+@Table(name = "documents", // Maps this class to the "documents" table in PostgreSQL
+        indexes = @Index(name = "idx_documents_content_sha256", columnList = "content_sha256"))
 public class Document {
 
     @Id
@@ -31,6 +32,10 @@ public class Document {
     // Key used to locate the file inside MinIO (e.g. "documents/uuid-filename.pdf")
     @Column(name = "minio_object_key", nullable = false)
     private String minioObjectKey;
+
+    // SHA-256 of the file content (lowercase hex); lets clients find a local file in the DMS
+    @Column(name = "content_sha256", length = 64)
+    private String contentSha256;
 
     // Owner of the document. Regular users only see their own documents.
     @ManyToOne(fetch = FetchType.LAZY)

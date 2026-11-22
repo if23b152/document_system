@@ -6,6 +6,7 @@ import at.technikum_wien.rest_server.model.Document;
 import at.technikum_wien.rest_server.model.DocumentResponse;
 import at.technikum_wien.rest_server.model.DocumentTextResponse;
 import at.technikum_wien.rest_server.model.UpdateDocumentRequest;
+import at.technikum_wien.rest_server.service.ContentHash;
 import at.technikum_wien.rest_server.service.DocumentService;
 import at.technikum_wien.rest_server.service.MinioService;
 import jakarta.validation.Valid;
@@ -64,6 +65,12 @@ public class DocumentController {
         }
 
         try {
+            // Fingerprint of the content, used to find the document again from a local copy
+            String contentSha256;
+            try (InputStream in = file.getInputStream()) {
+                contentSha256 = ContentHash.sha256(in);
+            }
+
             // Upload the file to MinIO and receive its object key
             String objectKey = documentService.uploadToMinio(file);
 
@@ -71,7 +78,8 @@ public class DocumentController {
             Document saved = documentService.saveDocument(
                     sanitizeFileName(file.getOriginalFilename()),
                     file.getSize(),
-                    objectKey
+                    objectKey,
+                    contentSha256
             );
 
             // Convert entity to response DTO
@@ -108,6 +116,20 @@ public class DocumentController {
                 .map(documentMapper::toResponse) // Convert entity to DTO
                 .map(ResponseEntity::ok)          // Return 200 OK
                 .orElse(ResponseEntity.notFound().build()); // Or 404 Not Found
+    }
+
+    // === GET: Find a document by the SHA-256 of its content (used by the Explorer integration) ===
+    @GetMapping("/by-hash/{sha256}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<DocumentResponse> getDocumentByContentHash(@PathVariable String sha256) {
+        String hash = ContentHash.normalize(sha256);
+        if (hash == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return documentService.getDocumentByContentHash(hash)
+                .map(documentMapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // === PUT: Update document metadata ===

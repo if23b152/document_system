@@ -74,7 +74,8 @@ class DocumentControllerTest {
         Mockito.when(documentService.saveDocument(
                 Mockito.eq("test.pdf"),
                 Mockito.anyLong(),
-                Mockito.eq("minio-key")
+                Mockito.eq("minio-key"),
+                Mockito.matches("[0-9a-f]{64}")
         )).thenReturn(savedDocument);
 
         Mockito.when(documentMapper.toResponse(savedDocument))
@@ -165,8 +166,8 @@ class DocumentControllerTest {
         Document d2 = new Document();
         d2.setId(2L);
 
-        DocumentResponse r1 = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null);
-        DocumentResponse r2 = new DocumentResponse(2L, "b.pdf", 20, null, LocalDateTime.now(), List.of(), null);
+        DocumentResponse r1 = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null, null);
+        DocumentResponse r2 = new DocumentResponse(2L, "b.pdf", 20, null, LocalDateTime.now(), List.of(), null, null);
 
         Mockito.when(documentService.getAllDocuments()).thenReturn(List.of(d1, d2));
         Mockito.when(documentMapper.toResponse(d1)).thenReturn(r1);
@@ -187,7 +188,7 @@ class DocumentControllerTest {
         Document doc = new Document();
         doc.setId(1L);
 
-        DocumentResponse response = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null);
+        DocumentResponse response = new DocumentResponse(1L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null, null);
 
         Mockito.when(documentService.getDocumentById(1L)).thenReturn(Optional.of(doc));
         Mockito.when(documentMapper.toResponse(doc)).thenReturn(response);
@@ -206,6 +207,43 @@ class DocumentControllerTest {
     }
 
     // =====================================================
+    // === GET BY CONTENT HASH
+    // =====================================================
+    private static final String HASH = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+
+    @Test
+    void getDocumentByContentHash_found_returns200() throws Exception {
+        Document doc = new Document();
+        doc.setId(7L);
+        DocumentResponse response = new DocumentResponse(7L, "a.pdf", 10, null, LocalDateTime.now(), List.of(), null, HASH);
+
+        Mockito.when(documentService.getDocumentByContentHash(HASH)).thenReturn(Optional.of(doc));
+        Mockito.when(documentMapper.toResponse(doc)).thenReturn(response);
+
+        // Uppercase input is normalized before the lookup
+        mockMvc.perform(get("/api/documents/by-hash/{hash}", HASH.toUpperCase()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7))
+                .andExpect(jsonPath("$.contentSha256").value(HASH));
+    }
+
+    @Test
+    void getDocumentByContentHash_notFound_returns404() throws Exception {
+        Mockito.when(documentService.getDocumentByContentHash(HASH)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/documents/by-hash/{hash}", HASH))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getDocumentByContentHash_invalidHash_returns400() throws Exception {
+        mockMvc.perform(get("/api/documents/by-hash/{hash}", "not-a-hash"))
+                .andExpect(status().isBadRequest());
+
+        Mockito.verifyNoInteractions(documentService);
+    }
+
+    // =====================================================
     // === UPDATE
     // =====================================================
     @Test
@@ -219,7 +257,7 @@ class DocumentControllerTest {
         Document updated = new Document();
         updated.setId(1L);
 
-        DocumentResponse response = new DocumentResponse(1L, "new.pdf", 10, "summary", LocalDateTime.now(), List.of("tag1", "tag2"), null);
+        DocumentResponse response = new DocumentResponse(1L, "new.pdf", 10, "summary", LocalDateTime.now(), List.of("tag1", "tag2"), null, null);
 
         Mockito.when(documentService.updateDocument(Mockito.eq(1L), Mockito.any()))
                 .thenReturn(Optional.of(updated));
