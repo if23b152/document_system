@@ -223,7 +223,7 @@ document_system/
 
 ```bash
 # run the tests (no running infrastructure needed – external services are mocked)
-(cd rest-server && ./mvnw test)       # 29 tests
+(cd rest-server && ./mvnw test)       # 72 tests, incl. end-to-end over HTTP
 (cd worker-service && ./mvnw test)    # 9 tests
 
 # tests + coverage report (target/site/jacoco/index.html)
