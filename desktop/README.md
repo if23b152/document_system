@@ -46,7 +46,7 @@ cd desktop
 
 The script builds everything as your user, then asks **once for administrator rights** to copy the files to `C:\Program Files\DmsExplorer` and register the preview handler and context menu machine-wide. Every registry step is written to `%TEMP%\DmsExplorer-install.log`.
 
-> **Why administrator rights?** Current Windows versions refuse per-user COM registrations from unknown programs and protect the `.pdf` association (User Choice Protection Driver). A machine-wide registration is the supported way for preview handlers.
+> **Why administrator rights?** A per-user registration was tried first, but on the test machine (Windows 11 25H2) writing it failed with "access denied"; the cause was not determined. The machine-wide registration works.
 
 Then open Explorer, turn on the preview pane (`Alt+P`) and select a PDF. The context menu entry is under *Show more options* on Windows 11.
 
