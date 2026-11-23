@@ -2,7 +2,7 @@
 
 # --- Stage 1: Build Stage (builder) ---
 # Use Java 21 JDK to compile the project
-FROM eclipse-temurin:21-jdk-jammy AS builder
+FROM eclipse-temurin:22-jdk-jammy AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN ./mvnw clean install -DskipTests
 
 # --- Stage 2: Runtime Stage ---
 # Use a smaller Java runtime image (JRE only, no compiler)
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:22-jre-jammy
 
 # Set working directory for the runtime container
 WORKDIR /app
